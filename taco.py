@@ -1,5 +1,6 @@
 import itertools
 import pdb
+import sys
 
 def product(s1, s2):
     # itertools.product(s1, s2) does not work since it can include
@@ -16,9 +17,32 @@ def product(s1, s2):
                 covered_region_pair.add((i.region, j.region))
     return prod
 
+
+class Vector(object):
+    def __init__(self, v=None):
+        if type(v) is Vector:
+            self.v = v.v[:]
+        elif v is None:
+            self.v = []            
+        else:
+            self.v = v
+            
+    def __len__(self):
+        return len(self.v)
+
+    def __iter__(self):
+        return iter(self.v)
+
+    def __getitem__(self, index):
+        return self.v[index]
+        
+    def __setitem__(self, index, v):
+        self.v[index] = v
+        return
+    
 class Particle(object):
-    def __init__(self,  pos=[0.0,0.0,0.0]):
-        self.pos = pos[:]
+    def __init__(self,  pos):
+        self.pos = Vector(pos)
 
     def __str__(self):
         return "particle: " + ", ".join(str(i) for i in self.pos)
@@ -30,16 +54,16 @@ def distance_r2(p1, p2):
                    in itertools.izip(p1.pos, p2.pos)))
 
 class Region(object):
-    def __init__(self, min_max1,
-                 min_max2, min_max3):
-        self.r = (min_max1, min_max2, min_max3)
+    def __init__(self, min_max):
+        assert(type(min_max) == tuple)
+        self.r = min_max
 
     def partition(self):
         x = itertools.product(
             *[[(r[0], r[0]+(r[1]-r[0])/2.0),
              (r[0]+(r[1]-r[0])/2.0, r[1])]
                  for r in self.r])
-        children = [Region(i[0], i[1], i[2]) for i in x]
+        children = [Region(i) for i in x]
         return children
 
     def contains(self, particle):

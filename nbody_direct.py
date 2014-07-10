@@ -11,11 +11,16 @@ import math
 
 from taco import *
 
+NDIM = 2
+
 class MyParticle(Particle):
-    def __init__(self, pos=[0.0,0.0,0.0], m=0.0, f=[0.0,0.0,0.0]):
+    def __init__(self, pos, m=0.0, f=None):
         super(MyParticle, self).__init__(pos)
         self.m = m
-        self.f = f[:]
+        self.f = f
+        if f is None:
+            self.f = Vector([0.0] * len(pos))
+        assert len(pos) == len(self.f)
 
     def __str__(self):
         return "particle{ pos: " + ", ".join(str(i) for i in self.pos) \
@@ -26,7 +31,7 @@ def init(np):
     particles = []
     random.seed(0)
     for i in range(np):
-        pos = [random.random(), random.random(), random.random()]
+        pos = [random.random() for i in range(NDIM)]
         m = 1.0 / np
         p = MyParticle(pos, m)
         particles.append(p)
@@ -44,7 +49,7 @@ def direct(p1, p2, reaction=False):
             invR2 = 1.0 / R2
             invR = q.m * math.sqrt(invR2)
             invR3 = invR2 * invR
-            for i in range(3):
+            for i in range(NDIM):
                 f = - (p.pos[i] - q.pos[i]) * invR3
                 p.f[i] -= f
                 q.f[i] += f
@@ -81,8 +86,8 @@ def interact(c1, c2, s):
 
 def taco_compute(np, s):
     particles = init(np)
-    root_cell = init_cell(particles,
-                          Region((0.0, 1.0), (0.0, 1.0), (0.0, 1.0)), np)
+    root_region =  Region(tuple([(0.0, 1.0)]*NDIM))
+    root_cell = init_cell(particles, root_region, np)
     print "root cell: " + str(root_cell)
     interact(root_cell, root_cell, s)
     return particles
