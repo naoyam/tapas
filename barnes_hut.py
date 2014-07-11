@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# The algorithm used below is based on the description at
+# http://arborjs.org/docs/barnes-hut.
+
 import taco
 import common
 import math
