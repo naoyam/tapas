@@ -39,6 +39,27 @@ class Vector(object):
     def __setitem__(self, index, v):
         self.v[index] = v
         return
+
+    def append(self, v):
+        self.v.append(v)
+
+    def mult(self, x):
+        if type(x) is Vector:
+            return Vector([i * j for i, j in zip(self, x)])
+        else:
+            return Vector([i * x for i in self.v])
+
+    def add(self, x):
+        if type(x) is Vector:
+            return Vector([i + j for i, j in zip(self, x)])
+        else:
+            return Vector([i + x for i in self.v])
+
+    def distance_r2(self, other):
+        return reduce(lambda x, y: x + y,
+                      ((x - y) ** 2 for x, y
+                       in itertools.izip(self.v, other.v)))
+        
     
 class Particle(object):
     def __init__(self,  pos):
@@ -48,10 +69,8 @@ class Particle(object):
         return "particle: " + ", ".join(str(i) for i in self.pos)
     pass
 
-def distance_r2(p1, p2):
-    return reduce(lambda x, y: x + y,
-                  ((x - y) ** 2 for x, y
-                   in itertools.izip(p1.pos, p2.pos)))
+    def distance_r2(self, other):
+        return self.pos.distance_r2(other.pos)
 
 class Region(object):
     def __init__(self, min_max):
