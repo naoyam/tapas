@@ -108,27 +108,35 @@ class Cell(object):
         self.indices = indices
         if self.indices is None:
             self.indices = set()
+        self.sub_cells = None
         pass
 
     def __str__(self):
         return "cell {" + str(self.region) + ", indices: " + \
             str(self.indices) + "}"
 
+    def create_sub_cell(self, sub_region):
+        return Cell(self.particles, sub_region)
+
     # partition a cell to equally divided 8 sub cells
-    def partition(self):
-        child_regions = self.region.partition()
-        child_cells = []        
-        for c in child_regions:
-            child_cells.append(Cell(self.particles, c))
+    def _partition(self):
+        sub_regions = self.region.partition()
+        sub_cells = []        
+        for c in sub_regions:
+            sub_cells.append(self.create_sub_cell(c))
 
         for index in self.indices:
-            for c in child_cells:
+            for c in sub_cells:
                 if c.region.contains(self.particles[index]):
                     c.indices.add(index)
 
-        for c in child_cells:
-            print c
-        return child_cells
+        self.sub_cells = sub_cells
+
+    def get_sub_cells(self):
+        if self.sub_cells is None:
+            self._partition()
+        return self.sub_cells
+        
 
     def get_num_particles(self):
         return len(self.indices)

@@ -16,11 +16,11 @@ def interact(c1, c2, s):
                       c1.region == c2.region)
     else:
         if c1.get_num_particles() > s:
-            c1_children = c1.partition()
+            c1_children = c1.get_sub_cells()
         else:
             c1_children = [c1]
         if c2.get_num_particles() > s:
-            c2_children = c2.partition()
+            c2_children = c2.get_sub_cells()
         else:
             c2_children = [c2]
         for i, j in taco.product(c1_children, c2_children):

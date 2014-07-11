@@ -2,6 +2,7 @@ import random
 import sys
 import itertools
 import math
+import time
 from taco import *
 
 NDIM = 2
@@ -33,6 +34,7 @@ def gen_particle_list(np):
 
 def compute_force(pos1, pos2, m1, m2):
     R2 = pos1.distance_r2(pos2)
+    if R2 == 0: return 0.0
     invR2 = 1.0 / R2
     invR = math.sqrt(invR2)
     invR3 = invR2 * invR * m1 * m2
@@ -73,16 +75,25 @@ def run_test(test_method, descriptor_str):
     if len(sys.argv) > 1:
         np = int(sys.argv[1])
 
+    s = time.clock()
     reference_result = reference_compute(np)
-    taco_result = test_method(np)
+    ref_elapsed = time.clock() - s
 
-    print "Reference (Direct)"
-    for p in reference_result: print p
+    s = time.clock()
+    test_result = test_method(np)
+    test_elapsed = time.clock() - s
 
-    print descriptor_str
-    for p in taco_result: print p
+    if np <= 10:
+        print "Reference (Direct)"
+        for p in reference_result: print p
+
+        print descriptor_str
+        for p in test_result: print p
 
     # compare results    
-    print "Diff: " + str(diff(reference_result, taco_result))
+    print "Diff: " + str(diff(reference_result, test_result))
+
+    print "Reference elapsed time: %f sec" % ref_elapsed
+    print "%s elapsed time: %f sec" % (descriptor_str, test_elapsed)
         
     return
