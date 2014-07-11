@@ -31,11 +31,11 @@ def gen_particle_list(np):
         particles.append(p)
     return particles
 
-def compute_force(pos1, pos2):
+def compute_force(pos1, pos2, m1, m2):
     R2 = pos1.distance_r2(pos2)
     invR2 = 1.0 / R2
     invR = math.sqrt(invR2)
-    invR3 = invR2 * invR
+    invR3 = invR2 * invR * m1 * m2
     f = Vector()
     for i in range(NDIM):
         f.append((pos1[i] - pos2[i]) * invR3)
@@ -49,9 +49,9 @@ def direct(p1, p2, reaction=False):
             j = 0
         for q in p2[j:]:
             if p is q: continue
-            f = compute_force(p.pos, q.pos)
-            p.f = p.f.add(f.mult(p.m))
-            q.f = q.f.add(f.mult(q.m).mult(-1))
+            f = compute_force(p.pos, q.pos, p.m, q.m)
+            p.f = p.f.add(f)
+            q.f = q.f.add(f.mult(-1))
     return
 
 def reference_compute(np):
