@@ -16,7 +16,8 @@ class MyParticle(Particle):
         assert len(pos) == len(self.f)
 
     def __str__(self):
-        return "particle{ pos: " + ", ".join(str(i) for i in self.pos) \
+        return "particle { pos: " + ", ".join(str(i) for i in self.pos) \
+            + ", mass: " + str(self.m) \
             + ", force: " + ", ".join(str(i) for i in self.f) + "}"
     pass
     
@@ -30,6 +31,16 @@ def gen_particle_list(np):
         particles.append(p)
     return particles
 
+def compute_force(pos1, pos2):
+    R2 = pos1.distance_r2(pos2)
+    invR2 = 1.0 / R2
+    invR = math.sqrt(invR2)
+    invR3 = invR2 * invR
+    f = Vector()
+    for i in range(NDIM):
+        f.append((pos1[i] - pos2[i]) * invR3)
+    return f
+
 def direct(p1, p2, reaction=False):
     for i, p in enumerate(p1):
         if reaction:
@@ -38,14 +49,9 @@ def direct(p1, p2, reaction=False):
             j = 0
         for q in p2[j:]:
             if p is q: continue
-            R2 = distance_r2(p, q)
-            invR2 = 1.0 / R2
-            invR = q.m * math.sqrt(invR2)
-            invR3 = invR2 * invR
-            for i in range(NDIM):
-                f = - (p.pos[i] - q.pos[i]) * invR3
-                p.f[i] -= f
-                q.f[i] += f
+            f = compute_force(p.pos, q.pos)
+            p.f = p.f.add(f.mult(p.m))
+            q.f = q.f.add(f.mult(q.m).mult(-1))
     return
 
 def reference_compute(np):
