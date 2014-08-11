@@ -102,21 +102,27 @@ class Region(object):
         return hash(self.r)
         
 class Cell(object):
-    def __init__(self, particles, region, indices=None):
+    def __init__(self, particles, region, indices=None, is_root=False,
+                 parent=None):
         self.particles = particles
         self.region = region
         self.indices = indices
         if self.indices is None:
             self.indices = set()
         self.sub_cells = None
+        self.is_root = root
+        self.parent = parent
         pass
 
+    def get_first_particle(self):
+        return self.particles[iter(self.indices).next()]
+        
     def __str__(self):
         return "cell {" + str(self.region) + ", indices: " + \
             str(self.indices) + "}"
 
     def create_sub_cell(self, sub_region):
-        return Cell(self.particles, sub_region)
+        return Cell(self.particles, sub_region, parent=self)
 
     # partition a cell to equally divided 8 sub cells
     def _partition(self):
@@ -140,4 +146,14 @@ class Cell(object):
 
     def get_num_particles(self):
         return len(self.indices)
+
+    def is_root(self):
+        return self.is_root
+
+    def is_leaf(self):
+        return len(self.sub_cells) == 0
+
+    def get_parent(self):
+        return self.parent
+
     
