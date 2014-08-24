@@ -35,6 +35,7 @@ DeclareRegionType(3, d)
 #define region3r region3d
 #endif
 
+extern int is_root(const CELL_TYPE * const); 
 extern int is_leaf(const CELL_TYPE * const); 
 extern index_t cell_np(const CELL_TYPE * const);
 extern real_t cell_distance(const CELL_TYPE * const c1, const CELL_TYPE * const c2);
@@ -44,6 +45,8 @@ extern void *get_force(const void *c);
 extern PARTICLE_TYPE get_particle(const CELL_TYPE * const c, index_t idx);
 extern void *get_subcells(const void *c);
 extern CELL_TYPE *get_subcell(const void *c, int idx);
+extern CELL_TYPE *get_parent(const CELL_TYPE * const c);
+extern CELL_TYPE *get_grand_parent(const CELL_TYPE * const c);
 extern void accumulate_force1f(const void *c, size_t idx, vec1f f);
 extern void accumulate_force2f(const void *c, size_t idx, vec2f f);
 extern void accumulate_force3f(const void *c, size_t idx, vec3f f);

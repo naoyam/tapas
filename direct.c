@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
+// Specify user-defined types
 #define PARTICLE_TYPE struct particle
 #define CELL_TYPE struct cell
 #include "taco.h"
