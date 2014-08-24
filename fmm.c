@@ -119,7 +119,7 @@ static void fmm_p2p(cell * const c1, cell * const c2,
   }
 }
 
-vec *calc_direct(particle *p, size_t np, int s, real_t p2p_cutoff) {
+vec *calc_fmm(particle *p, size_t np, int s, real_t p2p_cutoff) {
   // partition_bsp is a function that partitions the given set of
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
