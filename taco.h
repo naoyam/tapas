@@ -8,9 +8,6 @@
 #error CELL_TYPE not defined
 #endif
 
-PARTICLE_TYPE;
-CELL_TYPE;
-
 #include "primitive_types.h"
 #include "vec.h"
 

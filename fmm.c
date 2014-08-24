@@ -1,24 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
-// Specify user-defined types
-#define PARTICLE_TYPE struct particle
-#define CELL_TYPE struct cell
-#include "taco.h"
+#include "vec.h"
 
 #pragma taco particle_type(pos.x[0], pos.x[1], pos.x[2])
-struct particle {
+typedef struct particle {
   vec pos;
   real_t m;
-};
-typedef struct particle particle;
+} particle;
 
-struct cell {
+typedef struct cell {
   real_t m; // multipole expansion
   real_t l; // local expansion
-};
-typedef struct cell cell;
+} cell;
+
+// Specify user-defined types
+#define PARTICLE_TYPE particle
+#define CELL_TYPE cell
+#include "taco.h"
 
 static void direct(const cell * const c1, const cell * const c2) {
   for (int i = 0; i < cell_np(c1); ++i) {

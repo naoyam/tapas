@@ -2,19 +2,17 @@
 #include <stdlib.h>
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
-// Specify user-defined types
-#define PARTICLE_TYPE struct particle
-#define CELL_TYPE struct cell
-#include "taco.h"
-
+#include "vec.h"
 #pragma taco particle_type(pos.x[0], pos.x[1], pos.x[2])
 struct particle {
   vec pos;
   real_t m;
 };
-
-struct cell {
-};
+struct cell {};
+// Specify user-defined types.
+#define PARTICLE_TYPE struct particle
+#define CELL_TYPE struct cell
+#include "taco.h"
 
 static void direct(const struct cell *c1, const struct cell *c2) {
   for (int i = 0; i < cell_np(c1); ++i) {
@@ -31,9 +29,7 @@ static void direct(const struct cell *c1, const struct cell *c2) {
   }
 }
 
-
 // only c1 and c2 can be modified
-// c1 and c2 are restrict pointers
 static void interact(const struct cell *c1, const struct cell *c2) {
   if (is_leaf(c1) && is_leaf(c2)) {
     direct(c1, c2);
