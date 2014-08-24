@@ -1,6 +1,16 @@
 #ifndef TACO_H_
 #define TACO_H_
 
+#if !defined(PARTICLE_TYPE)
+#error PARTICLE_TYPE not defined
+#endif
+#if !defined(CELL_TYPE)
+#error CELL_TYPE not defined
+#endif
+
+PARTICLE_TYPE;
+CELL_TYPE;
+
 #include "primitive_types.h"
 #include "vec.h"
 
@@ -25,17 +35,15 @@ DeclareRegionType(3, d)
 #define region3r region3d
 #endif
 
-struct cell;
-typedef struct cell cell;
-
-extern int is_leaf(const void *); 
-extern index_t cell_np(const void *);
-extern void map(void *f, void *c);
+extern int is_leaf(const CELL_TYPE * const); 
+extern index_t cell_np(const CELL_TYPE * const);
+extern real_t cell_distance(const CELL_TYPE * const c1, const CELL_TYPE * const c2);
+extern void map(void *f, void *c, ...);
 extern void *product(const void *cl1,  const void *cl2);
 extern void *get_force(const void *c);
-extern void *get_particle(const void *c, index_t idx);
+extern PARTICLE_TYPE get_particle(const CELL_TYPE * const c, index_t idx);
 extern void *get_subcells(const void *c);
-extern cell *get_subcell(const void *c, int idx);
+extern CELL_TYPE *get_subcell(const void *c, int idx);
 extern void accumulate_force1f(const void *c, size_t idx, vec1f f);
 extern void accumulate_force2f(const void *c, size_t idx, vec2f f);
 extern void accumulate_force3f(const void *c, size_t idx, vec3f f);
@@ -53,12 +61,12 @@ extern void accumulate_force3d(const void *c, size_t idx, vec3d f);
 #define accumulate_force3r accumulate_force3d
 #endif
 
-extern cell *partition_bsp1f(void *p, size_t np, region1f r, int s);
-extern cell *partition_bsp2f(void *p, size_t np, region2f r, int s);
-extern cell *partition_bsp3f(void *p, size_t np, region3f r, int s);
-extern cell *partition_bsp1d(void *p, size_t np, region1d r, int s);
-extern cell *partition_bsp2d(void *p, size_t np, region2d r, int s);
-extern cell *partition_bsp3d(void *p, size_t np, region3d r, int s);
+extern CELL_TYPE *partition_bsp1f(void *p, size_t np, region1f r, int s);
+extern CELL_TYPE *partition_bsp2f(void *p, size_t np, region2f r, int s);
+extern CELL_TYPE *partition_bsp3f(void *p, size_t np, region3f r, int s);
+extern CELL_TYPE *partition_bsp1d(void *p, size_t np, region1d r, int s);
+extern CELL_TYPE *partition_bsp2d(void *p, size_t np, region2d r, int s);
+extern CELL_TYPE *partition_bsp3d(void *p, size_t np, region3d r, int s);
 #if defined(DEFAULT_FP_TYPE_FLOAT)
 #define partition_bsp1r partition_bsp1f
 #define partition_bsp2r partition_bsp2f

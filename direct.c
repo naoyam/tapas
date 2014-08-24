@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
+#define PARTICLE_TYPE struct particle
+#define CELL_TYPE struct cell
 #include "taco.h"
 
 #pragma taco particle_type(pos.x[0], pos.x[1], pos.x[2])
@@ -16,8 +18,8 @@ struct cell {
 static void direct(const struct cell *c1, const struct cell *c2) {
   for (int i = 0; i < cell_np(c1); ++i) {
     for (int j = 0; j < cell_np(c2); ++j) {
-      struct particle p1 = *(struct particle*)get_particle(c1, i);
-      struct particle p2 = *(struct particle*)get_particle(c2, i);
+      struct particle p1 = get_particle(c1, i);
+      struct particle p2 = get_particle(c2, i);
       vec d = vec_sub(p1.pos, p2.pos);
       // By convention, "force" is defined as a vector for each
       // particle. accumulate_force is a special function that
@@ -48,7 +50,7 @@ vec *calc_direct(struct particle *p, size_t np, int s) {
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
   region3r r = {{{0.0, 0.0, 0.0}}, {{1.0, 1.0, 1.0}}};
-  cell *root = partition_bsp(p, np, r, s);
+  struct cell *root = partition_bsp(p, np, r, s);
   map(interact, product(root, root));
   vec *force = get_force(root);
   return force;
