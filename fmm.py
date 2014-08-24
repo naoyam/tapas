@@ -36,7 +36,7 @@ def fmm_p2m(c):
         c.m = p2m(c)
     else:
         for i in c.get_sub_cells():
-            fmm_bottomup(i)
+            fmm_p2m(i)
         c.m = m2m(c)
     return
 
@@ -57,11 +57,8 @@ def fmm_m2l(c1, c2):
         f = m2l(c1, c2)
         c1.l += f
         c2.l += -f # actual M2L force calculation look probably different
-        for i, j in taco.product(c1.get_sub_cells(), c2.get_sub_cells()):
-            fmm_m2l(i, j)
-    elif c1_grand_parent is None:
-        assert c2_grand_parent is None
-        # c1 and c2 are the root cell or both of them do not have grand parents
+    elif (c1.is_root() and c2.is_root()) or \
+         c1.get_parent() == c2.get_parent():
         for i, j in taco.product(c1.get_sub_cells(), c2.get_sub_cells()):
             fmm_m2l(i, j)
 
