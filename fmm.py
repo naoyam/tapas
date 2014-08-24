@@ -102,10 +102,10 @@ def taco_fmm(np):
     root_cell = FMMCell(particles, root_region, set(range(np)), is_root=True)
 
     # P2M and M2M
-    fmm_m2m(root_cell)
+    fmm_p2m(root_cell)
 
     # M2L
-    fmm_m2m(root_cell, root_cell)
+    fmm_m2l(root_cell, root_cell)
 
     # L2L and L2P
     fmm_l2l(root_cell)
