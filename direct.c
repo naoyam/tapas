@@ -10,7 +10,10 @@ struct particle {
   real_t m;
 };
 
-void direct(const struct cell *c1, const struct cell *c2) {
+struct cell {
+};
+
+static void direct(const struct cell *c1, const struct cell *c2) {
   for (int i = 0; i < cell_np(c1); ++i) {
     for (int j = 0; j < cell_np(c2); ++j) {
       struct particle p1 = *(struct particle*)get_particle(c1, i);
@@ -28,7 +31,7 @@ void direct(const struct cell *c1, const struct cell *c2) {
 
 // only c1 and c2 can be modified
 // c1 and c2 are restrict pointers
-void interact(const struct cell *c1, const struct cell *c2) {
+static void interact(const struct cell *c1, const struct cell *c2) {
   if (is_leaf(c1) && is_leaf(c2)) {
     direct(c1, c2);
   } else if (is_leaf(c1)) {

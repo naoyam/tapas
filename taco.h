@@ -25,9 +25,8 @@ DeclareRegionType(3, d)
 #define region3r region3d
 #endif
 
-
-typedef struct cell {
-} cell;
+struct cell;
+typedef struct cell cell;
 
 extern int is_leaf(const void *); 
 extern index_t cell_np(const void *);
@@ -36,6 +35,7 @@ extern void *product(const void *cl1,  const void *cl2);
 extern void *get_force(const void *c);
 extern void *get_particle(const void *c, index_t idx);
 extern void *get_subcells(const void *c);
+extern cell *get_subcell(const void *c, int idx);
 extern void accumulate_force1f(const void *c, size_t idx, vec1f f);
 extern void accumulate_force2f(const void *c, size_t idx, vec2f f);
 extern void accumulate_force3f(const void *c, size_t idx, vec3f f);
