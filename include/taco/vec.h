@@ -1,5 +1,5 @@
-#ifndef VEC_H_
-#define VEC_H_
+#ifndef TACO_VEC_H_
+#define TACO_VEC_H_
 
 #include <math.h>
 
@@ -174,4 +174,4 @@ DeclareVec3L2norm2(double, d, fabs)
 #define vec3r_l2norm2 vec3d_l2norm2
 #endif
 
-#endif /* VEC_H_ */
+#endif /* TACO_VEC_H_ */

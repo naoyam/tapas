@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
-#include "vec.h"
+#include "taco/vec.h"
 #pragma taco particle_type(pos.x[0], pos.x[1], pos.x[2])
 struct particle {
   vec pos;

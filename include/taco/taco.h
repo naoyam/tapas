@@ -1,5 +1,5 @@
-#ifndef TACO_H_
-#define TACO_H_
+#ifndef TACO_TACO_H_
+#define TACO_TACO_H_
 
 #if !defined(PARTICLE_TYPE)
 #error PARTICLE_TYPE not defined
@@ -88,4 +88,4 @@ extern CELL_TYPE *partition_bsp3d(void *p, size_t np, region3d r, int s);
 #define partition_bsp partition_bsp3r
 #endif
 
-#endif /* TACO_H_ */
+#endif /* TACO_TACO_H_ */
