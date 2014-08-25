@@ -67,6 +67,7 @@ extern CELL_TYPE *partition_bsp3f(void *p, size_t np, region3f r, int s);
 extern CELL_TYPE *partition_bsp1d(void *p, size_t np, region1d r, int s);
 extern CELL_TYPE *partition_bsp2d(void *p, size_t np, region2d r, int s);
 extern CELL_TYPE *partition_bsp3d(void *p, size_t np, region3d r, int s);
+// Can be simplfied with the C11 type generic selection
 #if defined(DEFAULT_FP_TYPE_FLOAT)
 #define partition_bsp1r partition_bsp1f
 #define partition_bsp2r partition_bsp2f
