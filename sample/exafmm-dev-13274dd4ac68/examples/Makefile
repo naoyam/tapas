@@ -13,12 +13,12 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS) -o $@
-	./$@
+	./$@ -n 10000
 
 # Test for serial FMM with TACO
 serial_taco: serial_taco.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS) -o $@
-	./$@
+	./$@ -n 10000
 
 
 # Test for parallel FMM

@@ -17,7 +17,18 @@
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
 #include "taco/vec.h"
+typedef struct taco_particle {
+  TACO_vec4r TRG;
+} taco_particle;
 
+typedef struct taco_cell {
+} taco_cell;
+
+#define PARTICLE_TYPE taco_particle
+#define CELL_TYPE taco_cell
+#include "taco/taco.h"
+
+#include "serial_taco_helper.cxx"
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
@@ -30,6 +41,11 @@ int main(int argc, char ** argv) {
   Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
+
+  taco_particle *tp;
+  taco_cell *root;
+  TACO_region3r tr;
+
   num_threads(args.threads);
 
   const real_t cycle = 2 * M_PI;
@@ -37,6 +53,7 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
+  tp = LoadBodiesToParticles(bodies);
 #if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
@@ -54,11 +71,20 @@ int main(int argc, char ** argv) {
     logger::startPAPI();
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
+    asn(tr, bounds);
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
+#ifndef TACO
     cells = buildTree.buildTree(bodies, bounds);
-    upDownPass.upwardPass(cells);
+    upDownPass.upwardPass(cells);    
+#else    
+    // TODO: s?
+    root = partition_bsp(tp, args.numBodies, r, s);
+    // TODO
+    upDownPass.upwardPass(cells);    
+#endif
+
 #if IneJ
     jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
