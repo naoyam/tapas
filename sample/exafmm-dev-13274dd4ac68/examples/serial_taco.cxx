@@ -14,6 +14,8 @@
 #include "vtk.h"
 #endif
 
+#define TACO
+
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
 #include "taco/vec.h"
@@ -79,10 +81,8 @@ int main(int argc, char ** argv) {
     cells = buildTree.buildTree(bodies, bounds);
     upDownPass.upwardPass(cells);    
 #else    
-    // TODO: s?
-    root = partition_bsp(tp, args.numBodies, r, s);
-    // TODO
-    upDownPass.upwardPass(cells);    
+    root = partition_bsp(tp, args.numBodies, tr, args.ncrit);
+    TACO_map(fmm_p2m, root);    
 #endif
 
 #if IneJ
@@ -93,7 +93,9 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
 #endif
+    
     upDownPass.downwardPass(cells);
+    
     logger::printTitle("Total runtime");
     logger::stopPAPI();
     logger::stopTimer("Total FMM");

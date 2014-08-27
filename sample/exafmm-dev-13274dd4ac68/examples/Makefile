@@ -15,8 +15,8 @@ serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS) -o $@
 
 # Test for serial FMM with TACO
-serial_taco: serial_taco.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS) -o $@
+#serial_taco: serial_taco.o $(OBJECTS)
+#	$(CXX) $? $(LFLAGS) -o $@
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
