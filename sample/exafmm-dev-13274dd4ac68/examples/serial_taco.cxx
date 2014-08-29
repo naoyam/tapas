@@ -14,16 +14,25 @@
 #include "vtk.h"
 #endif
 
+#if Spherical
+#if EXPANSION = 10
+#define TACO_vecPr TACO_vec55r
 #define TACO
 
 #define DEFAULT_FP_TYPE_DOUBLE
 #define DEFAULT_NUM_DIM 3
 #include "taco/vec.h"
 typedef struct taco_particle {
+  TACO_vec3r X;
+  real_t SRC;
   TACO_vec4r TRG;
 } taco_particle;
 
 typedef struct taco_cell {
+  TACO_vec3r X;
+  real_t R;
+  TACO_vecPr M;
+  TACO_vecPr L;
 } taco_cell;
 
 #define PARTICLE_TYPE taco_particle
@@ -55,7 +64,9 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
+#ifdef TACO  
   tp = LoadBodiesToParticles(bodies);
+#endif  
 #if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
@@ -73,7 +84,9 @@ int main(int argc, char ** argv) {
     logger::startPAPI();
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
+#ifdef TACO    
     asn(tr, bounds);
+#endif    
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
@@ -82,9 +95,10 @@ int main(int argc, char ** argv) {
     upDownPass.upwardPass(cells);    
 #else    
     root = partition_bsp(tp, args.numBodies, tr, args.ncrit);
-    TACO_map(fmm_p2m, root);    
+    TACO_map(fmm_p2m, root, args.theta);    
 #endif
 
+#ifndef TACO    
 #if IneJ
     jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
@@ -93,8 +107,16 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
 #endif
-    
+#else
+    TACO_map(fmm_m2l, root, root);
+    jbodies = bodies;
+#endif    
+
+#ifndef TACO    
     upDownPass.downwardPass(cells);
+#else
+    TACO_map(fmm_l2p(cells));
+#endif    
     
     logger::printTitle("Total runtime");
     logger::stopPAPI();
