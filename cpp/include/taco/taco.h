@@ -3,25 +3,9 @@
 
 #include "taco/common.h"
 #include "taco/vec.h"
+#include "taco/basic_types.h"
 
 namespace taco {
-
-template <int DIM, class FP>
-class Region {
- private:
-  Vec<DIM, FP> min_;
-  Vec<DIM, FP> max_;
- public:
-  Region(const Vec<DIM, FP> &min, const Vec<DIM, FP> &max):
-      min_(min), max_(max) {}
-
-  Vec<DIM, FP> &min() {
-    return min_;
-  }
-  Vec<DIM, FP> &max() {
-    return max_;
-  }
-};
 
 template <int DIM, class FP, class PT>
 class Cell {
