@@ -22,12 +22,12 @@ void PrintHelperNode(taco::hot::HelperNode<DIM> *hn, int n,
 int main(int argc, char *argv[]) {
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
   int np = 1000;
-  int max_depth = 5;
-
+  const int max_depth = 5;
   particle *p = GetParticles(np, r);
   PrintParticles<TEST_DIM>(p, 10, std::cout);
   taco::hot::HelperNode<TEST_DIM> *hn =
-      taco::hot::CreateInitialNodes<TEST_DIM, real_t, particle, 0>(p, np, r, max_depth);
+      taco::hot::CreateInitialNodes<TEST_DIM, real_t, particle, 0, max_depth>(
+          p, np, r);
   PrintHelperNode(hn, 10, std::cout);
   return 0;
 }

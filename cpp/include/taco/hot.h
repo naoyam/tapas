@@ -20,44 +20,46 @@ struct HelperNode {
   index_t np;
 };
 
-template <int DIM, class FP, class PT, int OFFSET>
+template <int DIM, class FP, class PT, int OFFSET, int MAX_DEPTH>
 HelperNode<DIM> *CreateInitialNodes(const PT *p, index_t np, 
-                                    const Region<DIM, FP> &r, int max_depth);
+                                    const Region<DIM, FP> &r);
+
+template <int DIM, int MAX_DEPTH>
+KeyType CalcMortonKey(const Vec<DIM, int> &anchor);
+
 
 template <int DIM>
-KeyType CalcMortonKey(const Vec<DIM, int> &anchor, int max_depth,
-                      int depth_bit_width);
+HelperNode<DIM> *SortNodes();
 
 } // namespace hot
 } // namespace taco
 
-template <int DIM>
-taco::hot::KeyType taco::hot::CalcMortonKey(const taco::Vec<DIM, int> &anchor,
-                                            int max_depth, int depth_bit_width) {
+template <int DIM, int MAX_DEPTH>
+taco::hot::KeyType taco::hot::CalcMortonKey(const taco::Vec<DIM, int> &anchor) {
   KeyType k = 0;
-  int mask = 1 << (max_depth - 1);
-  for (int i = 0; i < max_depth; ++i) {
+  int mask = 1 << (MAX_DEPTH - 1);
+  for (int i = 0; i < MAX_DEPTH; ++i) {
     for (int d = 0; d < DIM; ++d) {
-      k = (k << 1) | ((anchor[d] & mask) >> (max_depth - i - 1));
+      k = (k << 1) | ((anchor[d] & mask) >> (MAX_DEPTH - i - 1));
     }
     mask >>= 1;
   }
-  k = (k << depth_bit_width) | max_depth;
+  int depth_bit_width = Log2<MAX_DEPTH>::x;  
+  k = (k << depth_bit_width) | MAX_DEPTH;
   return k;
 }
 
-template <int DIM, class FP, class PT, int OFFSET>
+template <int DIM, class FP, class PT, int OFFSET, int MAX_DEPTH>
 taco::hot::HelperNode<DIM> *taco::hot::CreateInitialNodes(
     const PT *p, index_t np,
-    const Region<DIM, FP> &r, int max_depth) {
+    const Region<DIM, FP> &r) {
 
   HelperNode<DIM> *nodes = new HelperNode<DIM>[np];
-  FP num_cell = 1 << max_depth;
+  FP num_cell = 1 << MAX_DEPTH;
   Vec<DIM, FP> pitch;
   for (int d = 0; d < DIM; ++d) {
     pitch[d] = (r.max()[d] - r.min()[d]) / num_cell;
   }
-  int depth_bit_width = std::floor(std::log2(max_depth)) + 1;
   for (index_t i = 0; i < np; ++i) {
     HelperNode<DIM> &node = nodes[i];
     node.p_index = i;
@@ -70,10 +72,10 @@ taco::hot::HelperNode<DIM> *taco::hot::CreateInitialNodes(
     }
 #ifdef TACO_DEBUG
     assert(node.anchor >= 0);
-    assert(node.anchor < (1 << max_depth));
+    assert(node.anchor < (1 << MAX_DEPTH));
 #endif // TACO_DEBUG
     
-    node.key = CalcMortonKey(node.anchor, max_depth, depth_bit_width);
+    node.key = CalcMortonKey<DIM, MAX_DEPTH>(node.anchor);
   }
   
   return nodes;

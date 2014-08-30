@@ -44,6 +44,17 @@ inline std::ostream& operator<<(std::ostream &os,
   return os << sj.get();
 }
 
+template <int N>
+struct Log2 {
+  static const int x = Log2<(N>>1)>::x + 1;
+};
+
+template <>
+struct Log2<0> {
+  static const int x = 0;
+};
+
+
 }
 
 #endif /* TACO_COMMON_ */
