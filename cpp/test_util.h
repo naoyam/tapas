@@ -9,7 +9,9 @@
 
 using namespace std;
 
+#ifndef TEST_DIM
 #define TEST_DIM (3)
+#endif
 
 typedef double real_t;
 typedef taco::Region<TEST_DIM, real_t> Region;
