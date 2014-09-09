@@ -32,11 +32,9 @@ class Cell {
   }
 };
 
-// TODO
-template <int DIM, class FP, class PT>
-Cell<DIM, FP, PT> *PartitionBSP(const PT *p,
-                                index_t np,
-                                int (*pos_offset)(int),
+
+template <int DIM, class FP, class PT, int OFFSET>
+Cell<DIM, FP, PT> *PartitionBSP(const PT *p, index_t np,
                                 const Region<DIM, FP> &r,
                                 int max_np);
 

@@ -53,10 +53,7 @@ void calc_direct(struct particle *p, size_t np, int s) {
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
-  Cell *root =
-      taco::PartitionBSP(p, np,
-                         [] (int idx) -> int {return sizeof(real_t) * idx; },
-                         r, s);
+  Cell *root = taco::PartitionBSP<DIM, real_t, particle, 0>(p, np, r, s);
   taco::Map(interact, taco::Product(*root, *root));
   
   //TACO_vec *force = get_force(root);
