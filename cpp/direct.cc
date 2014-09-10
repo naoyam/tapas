@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 
 #include "taco/taco.h"
 
@@ -17,20 +18,32 @@ struct particle {
 typedef taco::Cell<DIM, real_t, particle> Cell;
 
 static void direct(const Cell &c1, const Cell &c2) {
+  const float eps2 = 1e-6;
   for (int i = 0; i < c1.size(); ++i) {
-    particle p1 = *c1.Particle(i);  
+    particle p1 = *c1.Particle(i);
+    real_t xi = p1.pos[0];
+    real_t xj = p1.pos[1];
+    real_t xk = p1.pos[2];
     for (int j = 0; j < c2.size(); ++j) {
       particle p2 = *c2.Particle(j);
       // do some calc
-      Vec f;
+      real_t dx = p2.pos[0] - xi;
+      real_t dy = p2.pos[1] - xj;
+      real_t dz = p2.pos[2] - xk;
+      real_t R2 = dx * dx + dy * dy + dz * dz + eps2;
+      real_t invR = 1.0 / std::sqrt(R2);
+      real_t invR3 = p2.m * invR * invR * invR;
+      Vec f(dx * invR3, dy * invR3, dz * invR3);
       // By convention, "force" is defined as a vector for each
       // particle. accumulate_force is a special function that
       // accumulates all contributions to the force for a particle.
       taco::AccumulateForce(c1, i, f);
-      taco::AccumulateForce(c2, i, -f);
+      taco::AccumulateForce(c2, j, -f);
+      // TODO: potential?
+      real_t p1_pot = p2.m * invR;
+      real_t p2_pot = p1.m * invR;
     }
   }
-
 }
 
 
