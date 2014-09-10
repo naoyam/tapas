@@ -7,7 +7,10 @@
 
 namespace taco {
 
-template <int DIM, class FP, class PT>
+template <int DIM, class FP, class PT, class OUT>
+class SubCellIterator;
+
+template <int DIM, class FP, class PT, class OUT>
 class Cell {
  public:
   bool IsRoot() const; // TODO
@@ -30,21 +33,25 @@ class Cell {
   PT *Particle(index_t idx) const {
     return NULL;
   }
+  void Accumulate(index_t idx, const OUT &x) const {
+    return;
+  }
+  SubCellIterator<DIM, FP, PT, OUT> SubCells() const;
 };
 
 
-template <int DIM, class FP, class PT, int OFFSET>
-Cell<DIM, FP, PT> *PartitionBSP(const PT *p, index_t np,
-                                const Region<DIM, FP> &r,
-                                int max_np);
+template <int DIM, class FP, class PT, int OFFSET, class OUT>
+Cell<DIM, FP, PT, OUT> *PartitionBSP(const PT *p, index_t np,
+                                     const Region<DIM, FP> &r,
+                                     int max_np);
 
-template <int DIM, class FP, class PT>
+template <int DIM, class FP, class PT, class OUT>
 class SubCellIterator {
-  const Cell<DIM, FP, PT> &c_;
+  const Cell<DIM, FP, PT, OUT> &c_;
   int idx_;
  public:
-  typedef Cell<DIM, FP, PT> value_type;
-  SubCellIterator(const Cell<DIM, FP, PT> &c): c_(c), idx_(0) {}
+  typedef Cell<DIM, FP, PT, OUT> value_type;
+  SubCellIterator(const Cell<DIM, FP, PT, OUT> &c): c_(c), idx_(0) {}
   int size() const {
     if (c_.IsLeaf()) {
       return 0;
@@ -52,7 +59,7 @@ class SubCellIterator {
       return 1 << DIM;
     }
   }
-  const Cell<DIM, FP, PT> &operator*() const {
+  const Cell<DIM, FP, PT, OUT> &operator*() const {
     return c_.SubCell(idx_);
   }
   SubCellIterator &operator++() {
@@ -65,10 +72,6 @@ class SubCellIterator {
   bool operator==(const T &x) const { return false; }
 };
 
-template <int DIM, class FP, class PT>
-SubCellIterator<DIM, FP, PT> SubCells(const Cell<DIM, FP, PT> &c) {
-  return SubCellIterator<DIM, FP, PT>(c);
-}
 
 
 template <class T1, class T2>
@@ -116,19 +119,23 @@ ProductIterator<T1, T2> Product(const T1 &t1, const T2 &t2) {
   return ProductIterator<T1, T2>(t1, t2);
 }
 
-template <int DIM, class FP, class PT, class T1, class T2, class... Args>
-void Map(void (*f)(const Cell<DIM, FP, PT>&, const Cell<DIM, FP, PT>&, Args...), ProductIterator<T1, T2> prod,
+template <int DIM, class FP, class PT, class OUT, class T1, class T2, class... Args>
+OUT *Map(void (*f)(const Cell<DIM, FP, PT, OUT>&, const Cell<DIM, FP, PT, OUT>&, Args...), ProductIterator<T1, T2> prod,
          Args...args) {
   for (int i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
     ++prod;
   }
+  return NULL;
 }
 
-template <int DIM, class FP, class PT>
-void AccumulateForce(const Cell<DIM, FP, PT>&, index_t idx, Vec<DIM, FP> f);
-
-
 } // namespace taco
+
+template <int DIM, class FP, class PT, class OUT>
+taco::SubCellIterator<DIM, FP, PT, OUT> taco::Cell<DIM, FP, PT, OUT>::
+SubCells() const {
+  return SubCellIterator<DIM, FP, PT, OUT>(*this);
+}
+
 
 #endif /* TACO_TACO_H_ */
