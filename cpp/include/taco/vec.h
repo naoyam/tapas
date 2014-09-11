@@ -62,11 +62,58 @@ class Vec {
     return *this;
   }
 
+  Vec operator+=(const Vec &v) {
+    for (int i = 0; i < DIM; ++i) {
+      x_[i] += v[i];
+    }
+    return *this;
+  }
+  
+  Vec operator-(const Vec &v) const {
+    Vec x(*this);    
+    for (int i = 0; i < DIM; ++i) {
+      x[i] -= v[i];
+    }
+    return x;
+  }
+
   Vec operator/=(const Vec &v) {
     for (int i = 0; i < DIM; ++i) {
       x_[i] /= v[i];
     }
     return *this;
+  }
+
+  Vec operator*(const FP &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] *= v;
+    }
+    return x;
+  }
+
+  Vec operator*(const Vec &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] *= v[i];
+    }
+    return x;
+  }
+
+  Vec operator+(const FP &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] += v;
+    }
+    return x;
+  }
+
+  Vec operator-(const FP &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] -= v;
+    }
+    return x;
   }
 
   bool operator>(const FP &v) const {
@@ -96,7 +143,15 @@ class Vec {
     }
     return true;
   }
-      
+
+  FP reduce_sum() const {
+    FP sum = x_[0];
+    for (int i = 1; i < DIM; ++i) {
+      sum += x_[i];
+    }
+    return sum;
+  }
+  
   ostream &print(ostream &os) const {
     StringJoin sj(", ");
     for (int i = 0; i < DIM; ++i) {

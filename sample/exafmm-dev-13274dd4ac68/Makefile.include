@@ -25,7 +25,7 @@ DEVICE	= CPU
 #CXX	= mpiFCCpx -Kfast # K computer
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
-CXX	= g++ -ggdb3 -Wall -Wextra -O2  -funroll-loops
+CXX	= g++ -std=c++11 -ggdb3 -Wall -Wextra -O2  -funroll-loops
 ##CXX	= icpc -Wall -O2
 
 ### choose fortran compiler
@@ -33,7 +33,7 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # gfortran
 #FC = mpif90 -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
 
 ### Base flags
-CXX	+= -I../include -I../../../include
+CXX	+= -I../include -I../../../cpp/include
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion

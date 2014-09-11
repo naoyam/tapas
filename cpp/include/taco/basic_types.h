@@ -16,6 +16,7 @@ class Region {
  public:
   Region(const Vec<DIM, FP> &min, const Vec<DIM, FP> &max):
       min_(min), max_(max) {}
+  Region() {}
 
   Vec<DIM, FP> &min() {
     return min_;

@@ -22,11 +22,14 @@ class Cell {
   PT_ATTR *dummy_;
   PT PT_dummy_;
   ATTR attr_;
+  Vec<DIM, FP> min_;
+  Vec<DIM, FP> max_;
  public:
   bool IsRoot() const; // TODO
   bool IsLeaf() const;// TODO
   index_t np() const;// TODO
-  Cell &SubCell(int idx) const; // TODO
+  int nsubcells() const;// TODO  
+  Cell &subcell(int idx) const; // TODO
   bool operator==(const Cell &c) const;
   template <class T>
   bool operator==(const T &x) const { return false; }
@@ -52,6 +55,15 @@ class Cell {
     return dummy_[0];
   }
   SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
+  ATTR &attr() {
+    return attr_;
+  }
+  const ATTR &attr() const {
+    return attr_;
+  }
+  FP width(int d) const {
+    return max_[d] - min_[d];
+  }
 };
 
 
@@ -75,10 +87,10 @@ class SubCellIterator {
     }
   }
   Cell<CELL_TEMPLATE_ARGS> &operator*() const {
-    return c_.SubCell(idx_);
+    return c_.subcell(idx_);
   }
-  SubCellIterator &operator++() {
-    ++idx_;
+  Cell<CELL_TEMPLATE_ARGS> &operator++() {
+    return c_.subcell(++idx_);
   }
   bool operator==(const SubCellIterator &x) const {
     return c_ == x.c_;
@@ -157,6 +169,15 @@ PT_ATTR *Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Cell<CELL_TEMPLATE_ARGS>&, Arg
   for (int i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
     ++prod;
+  }
+  return NULL;
+}
+
+template <CELL_TEMPLATE_PARAMS, class T, class... Args>
+PT_ATTR *Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Args...), T iter, Args...args) {
+  for (int i = 0; i < iter.size(); ++i) {
+    f(*iter, args...);
+    ++iter;
   }
   return NULL;
 }
