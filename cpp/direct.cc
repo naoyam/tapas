@@ -19,13 +19,13 @@ typedef taco::Cell<DIM, real_t, particle, particle> Cell;
 static void direct(const Cell &c1, const Cell &c2) {
   const float eps2 = 1e-6;
   for (int i = 0; i < c1.size(); ++i) {
-    particle p1 = *c1.Particle(i);
+    const particle &p1 = c1.particle(i);
     real_t xi = p1.X[0];
     real_t xj = p1.X[1];
     real_t xk = p1.X[2];
     particle fi = {{0, 0, 0, 0}};
     for (int j = 0; j < c2.size(); ++j) {
-      particle p2 = *c2.Particle(j);
+      const particle &p2 = c2.particle(j);
       real_t dx = p2.X[0] - xi;
       real_t dy = p2.X[1] - xj;
       real_t dz = p2.X[2] - xk;
@@ -36,11 +36,17 @@ static void direct(const Cell &c1, const Cell &c2) {
       fi.X[1] += dy * invR3;
       fi.X[2] += dz * invR3;
       fi.X[3] += p2.X[3] * invR;
-      particle fj = {{-dx * invR3, -dy * invR3, -dz * invR3,
-                      p1.X[3] * invR}};
-      c2.Accumulate(j, fj);
+      // mutual interaction
+      particle &fj = c2.attr(j);
+      fj.X[0] += -dx * invR3;
+      fj.X[1] += -dy * invR3;
+      fj.X[2] += -dz * invR3;
+      fj.X[3] += p1.X[3] * invR;
     }
-    c1.Accumulate(i, fi);    
+    c1.attr(i).X[0] += fi.X[0];
+    c1.attr(i).X[1] += fi.X[1];
+    c1.attr(i).X[2] += fi.X[2];
+    c1.attr(i).X[3] += fi.X[3];
   }
 }
 
@@ -50,11 +56,11 @@ static void interact(const Cell &c1, const Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
     direct(c1, c2);
   } else if (c1.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1, c2.SubCells()));
+    taco::Map(interact, taco::Product(c1, c2.subcells()));
   } else if (c2.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1, c2.SubCells()));
+    taco::Map(interact, taco::Product(c1.subcells(), c2));
   } else {
-    taco::Map(interact, taco::Product(c1.SubCells(), c2.SubCells()));
+    taco::Map(interact, taco::Product(c1.subcells(), c2.subcells()));
   }
 }
 
