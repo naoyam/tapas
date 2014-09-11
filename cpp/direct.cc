@@ -9,14 +9,12 @@ typedef double real_t;
 typedef taco::Vec<DIM, real_t> Vec;
 typedef taco::Region<DIM, real_t> Region;
 
-
 struct particle {
   real_t X[4];
 };
 
-typedef taco::Cell<DIM, real_t, particle, particle> Cell;
+typedef taco::Cell<DIM, real_t, particle, 0, particle> Cell;
 
-// TODO: make the parameters non constnat
 static void direct(Cell &c1, Cell &c2) {
   const float eps2 = 1e-6;
   for (int i = 0; i < c1.size(); ++i) {
@@ -51,7 +49,6 @@ static void direct(Cell &c1, Cell &c2) {
   }
 }
 
-
 // only c1 and c2 can be modified
 static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
@@ -65,12 +62,13 @@ static void interact(Cell &c1, Cell &c2) {
   }
 }
 
-
 particle *calc_direct(struct particle *p, size_t np, int s) {
   // PartitionBSP is a function that partitions the given set of
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
+  //Cell *root = taco::PartitionBSP<particle, Region, Cell>(p, np, r,
+  //s);
   Cell *root = taco::PartitionBSP<DIM, real_t, particle, 0, particle>(p, np, r, s);
   particle *out = taco::Map(interact, taco::Product(*root, *root));
   return out;
