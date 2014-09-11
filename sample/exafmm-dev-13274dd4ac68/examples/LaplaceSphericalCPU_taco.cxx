@@ -148,10 +148,10 @@ void taco_kernel::M2M(TacoCell & C) {
     }
   }
 }
-#if 0
+
 void taco_kernel::M2L(TacoCell &Ci, TacoCell &Cj, vec3 Xperiodic, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
-  vec3 dX = Ci->X - Cj->X - Xperiodic;
+  vec3 dX = Ci.attr().X - Cj.attr().X - Xperiodic;
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);
   evalLocal(rho, alpha, beta, Ynmi);
@@ -169,39 +169,40 @@ void taco_kernel::M2L(TacoCell &Ci, TacoCell &Cj, vec3 Xperiodic, bool mutual) {
       int jk = j * j + j - k;
       Li += Cnm * Ynmi[jk];
       if (mutual) Lj += Cnm * Ynmj[jk];
-      for (int n=1; n<P-j; n++) {
+      for (int n=1; n<P-j; n++)
 #else
-      for (int n=0; n<P-j; n++) {
+      for (int n=0; n<P-j; n++)
 #endif
+      {
         for (int m=-n; m<0; m++) {
           int nms  = n * (n + 1) / 2 - m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
-          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm * Ynmj[jnkm];
+          Li += std::conj(Cj.attr().M[nms]) * Cnm * Ynmi[jnkm];
+          if (mutual) Lj += std::conj(Ci.attr().M[nms]) * Cnm * Ynmj[jnkm];
         }
         for (int m=0; m<=n; m++) {
           int nms  = n * (n + 1) / 2 + m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
           real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
-          Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
-          if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
+          Li += Cj.attr().M[nms] * Cnm2 * Ynmi[jnkm];
+          if (mutual) Lj += Ci.attr().M[nms] * Cnm2 * Ynmj[jnkm];
         }
       }
-      Ci->L[jks] += Li;
-      if (mutual) Cj->L[jks] += Lj;
+      Ci.attr().L[jks] += Li;
+      if (mutual) Cj.attr().L[jks] += Lj;
     }
   }
 }
 
-void taco_kernel::L2L(TacoCell &Ci, TacoCell &C0) {
+void taco_kernel::L2L(TacoCell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  TacoCell & Cj = C0 + Ci->IPARENT;
-  vec3 dX = Ci->X - Cj->X;
+  TacoCell &Cj = C.parent();
+  vec3 dX = C.attr().X - Cj.attr().X;
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);
   evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
 #if MASS
-  Ci->L /= Ci->M[0];
+  C.attr().L /= C.attr().M[0];
 #endif
   for (int j=0; j<P; j++) {
     for (int k=0; k<=j; k++) {
@@ -211,50 +212,55 @@ void taco_kernel::L2L(TacoCell &Ci, TacoCell &C0) {
         for (int m=j+k-n; m<0; m++) {
           int jnkm = (n - j) * (n - j) + n - j + m - k;
           int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(Cj->L[nms]) * Ynm[jnkm] * real_t(ODDEVEN(k));
+          L += std::conj(Cj.attr().L[nms]) * Ynm[jnkm] * real_t(ODDEVEN(k));
         }
         for (int m=0; m<=n; m++) {
           if( n-j >= abs(m-k) ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nms  = n * (n + 1) / 2 + m;
-            L += Cj->L[nms] * Ynm[jnkm] * real_t(ODDEVEN((m-k)*(m<k)));
+            L += Cj.attr().L[nms] * Ynm[jnkm] * real_t(ODDEVEN((m-k)*(m<k)));
           }
         }
       }
-      Ci->L[jks] += L;
+      C.attr().L[jks] += L;
     }
   }
 }
 
-void taco_kernel::L2P(TacoCell &Ci) {
+void taco_kernel::L2P(TacoCell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
-    vec3 dX = B->X - Ci->X;
+  for (int i = 0; i < C.size(); ++i) {
+    const Body &B = C.particle(i);  
+    vec3 dX = B.X - C.attr().X;
     vec3 spherical = 0;
     vec3 cartesian = 0;
     real_t r, theta, phi;
     cart2sph(r, theta, phi, dX);
     evalMultipole(r, theta, phi, Ynm, YnmTheta);
-    B->TRG /= B->SRC;
+    C.attr(i) /= B.SRC;
     for (int n=0; n<P; n++) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += std::real(Ci->L[nms] * Ynm[nm]);
-      spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
-      spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
+      //B->TRG[0] += std::real(C.attr().L[nms] * Ynm[nm]);
+      C.attr(i)[0] += std::real(C.attr().L[nms] * Ynm[nm]);
+      spherical[0] += std::real(C.attr().L[nms] * Ynm[nm]) / r * n;
+      spherical[1] += std::real(C.attr().L[nms] * YnmTheta[nm]);
       for( int m=1; m<=n; m++) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]);
-        spherical[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]) / r * n;
-        spherical[1] += 2 * std::real(Ci->L[nms] * YnmTheta[nm]);
-        spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;
+        //B->TRG[0] += 2 * std::real(C.attr().L[nms] * Ynm[nm]);
+        C.attr(i)[0] += 2 * std::real(C.attr().L[nms] * Ynm[nm]);
+        spherical[0] += 2 * std::real(C.attr().L[nms] * Ynm[nm]) / r * n;
+        spherical[1] += 2 * std::real(C.attr().L[nms] * YnmTheta[nm]);
+        spherical[2] += 2 * std::real(C.attr().L[nms] * Ynm[nm] * I) * m;
       }
     }
     sph2cart(r, theta, phi, spherical, cartesian);
-    B->TRG[1] += cartesian[0];
-    B->TRG[2] += cartesian[1];
-    B->TRG[3] += cartesian[2];
+    C.attr(i)[1] += cartesian[0];
+    //B->TRG[2] += cartesian[1];
+    C.attr(i)[2] += cartesian[1];
+    //B->TRG[3] += cartesian[2];
+    C.attr(i)[3] += cartesian[2]; 
   }
 }
-#endif
+
