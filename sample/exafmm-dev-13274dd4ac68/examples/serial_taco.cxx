@@ -89,16 +89,14 @@ Region tr;
     jbodies = bodies;
 #endif
 #else
-    // TODO: M2L
-    //TACO_map(fmm_m2l, root, root);
+    taco::Map(FMM_M2L, taco::Product(*root, *root));
     jbodies = bodies;
 #endif    
 
 #ifndef TACO    
     upDownPass.downwardPass(cells);
 #else
-    // TODO: downward
-    //TACO_map(fmm_l2p(cells));
+    taco::Map(FMM_L2P, *root);
 #endif    
     
     logger::printTitle("Total runtime");

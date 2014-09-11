@@ -28,3 +28,16 @@ static inline void FMM_P2M(TacoCell &c, real_t theta) {
   }
   c.attr().R /= theta;
 }
+
+static inline void FMM_L2P(TacoCell &c) {
+  taco_kernel::L2L(c);
+  if (c.IsLeaf()) {
+    taco_kernel::L2P(c);
+  } else {
+    taco::Map(FMM_L2P, c.subcells());
+  }
+}
+
+// TODO
+static inline void FMM_M2L(TacoCell &c1, TacoCell &c2) {
+}

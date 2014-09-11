@@ -30,6 +30,7 @@ class Cell {
   index_t np() const;// TODO
   int nsubcells() const;// TODO  
   Cell &subcell(int idx) const; // TODO
+  Cell &parent() const; // TODO  
   bool operator==(const Cell &c) const;
   template <class T>
   bool operator==(const T &x) const { return false; }
