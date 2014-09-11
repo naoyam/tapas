@@ -14,9 +14,8 @@ struct particle {
   real_t X[4];
 };
 
-typedef taco::Cell<DIM, real_t, particle, particle> Cell;
+typedef taco::Cell<DIM, real_t, particle, 0, particle> Cell;
 
-// TODO: make the parameters non constnat
 static void direct(Cell &c1, Cell &c2) {
   const float eps2 = 1e-6;
   for (int i = 0; i < c1.size(); ++i) {
