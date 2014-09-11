@@ -152,7 +152,7 @@ class Vec {
     return sum;
   }
   
-  ostream &print(ostream &os) const {
+  std::ostream &print(std::ostream &os) const {
     StringJoin sj(", ");
     for (int i = 0; i < DIM; ++i) {
       sj << x_[i];

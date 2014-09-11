@@ -17,15 +17,8 @@
 #define TACO
 
 #ifdef TACO
-#include "taco/taco.h"
-struct CellAttr {
-  vec3 X;
-  real_t R;
-  vecP M;
-  vecP L;
-};
-typedef taco::Cell<3, real_t, Body, 0, kvec4, CellAttr> TacoCell;
-typedef taco::Region<3, real_t> Region;
+#include "taco_common.h"
+#include "taco_kernel.h"
 #include "serial_taco_helper.cxx"
 #endif
 
@@ -83,8 +76,7 @@ Region tr;
     TacoCell *root = taco::PartitionBSP<
       3, real_t, Body, 0, kvec4, CellAttr>(
           bodies.data(), args.numBodies, tr, args.ncrit);
-    // TODO: upward
-    //TACO_map(fmm_p2m, root, args.theta);    
+    taco::Map(FMM_P2M, *root, args.theta);
 #endif
 
 #ifndef TACO    
