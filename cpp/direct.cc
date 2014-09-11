@@ -17,7 +17,7 @@ struct particle {
 typedef taco::Cell<DIM, real_t, particle, particle> Cell;
 
 // TODO: make the parameters non constnat
-static void direct(const Cell &c1, const Cell &c2) {
+static void direct(Cell &c1, Cell &c2) {
   const float eps2 = 1e-6;
   for (int i = 0; i < c1.size(); ++i) {
     const particle &p1 = c1.particle(i);
@@ -53,7 +53,7 @@ static void direct(const Cell &c1, const Cell &c2) {
 
 
 // only c1 and c2 can be modified
-static void interact(const Cell &c1, const Cell &c2) {
+static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
     direct(c1, c2);
   } else if (c1.IsLeaf()) {
