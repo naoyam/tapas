@@ -25,7 +25,7 @@ DEVICE	= CPU
 #CXX	= mpiFCCpx -Kfast # K computer
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
-CXX	= g++ -std=c++11 -ggdb3 -Wall -Wextra -O2  -funroll-loops
+CXX	= clang++ -std=c++11 -ggdb3 -Wall -Wextra -O2  -funroll-loops -fcolor-diagnostics
 ##CXX	= icpc -Wall -O2
 
 ### choose fortran compiler
@@ -81,11 +81,11 @@ endif
 MAKEFLAGS += --no-print-directory
 
 .c.o	:
-	$(CXX) -c $^ -o $@ $(LFLAGS)
+	$(CXX) -c $< -o $@ $(LFLAGS)
 .cxx.o  :
-	$(CXX) -c $^ -o $@ $(LFLAGS)
+	$(CXX) -c $< -o $@ $(LFLAGS)
 .cu.o   :
-	$(NVCC) -c $^ -o $@ $(LFLAGS)
+	$(NVCC) -c $< -o $@ $(LFLAGS)
 
 help:
 	@make -C .. help
