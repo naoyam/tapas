@@ -18,6 +18,7 @@ serial: serial.o $(OBJECTS)
 #serial_taco: serial_taco.o $(OBJECTS)
 #	$(CXX) $? $(LFLAGS) -o $@
 
+taco: serial_taco.o LaplaceP2PCPU_taco.o LaplaceSphericalCPU_taco.o
 serial_taco.o: serial_taco.cxx serial_taco_helper.cxx
 
 # Test for parallel FMM
