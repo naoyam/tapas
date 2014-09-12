@@ -89,7 +89,10 @@ Region tr;
     jbodies = bodies;
 #endif
 #else
-    taco::Map(FMM_M2L, taco::Product(*root, *root));
+    //taco::Map<3, real_t, Body, 0, kvec4, CellAttr, TacoCell, TacoCell, bool, int>(FMM_M2L, taco::Product(*root, *root), args.mutual, args.nspawn);
+    //taco::Map(FMM_M2L, taco::Product(*root, *root), args.mutual,
+    //args.nspawn);
+    taco::Map(FMM_M2L, taco::Product(*root, *root), args.mutual, args.nspawn);
     jbodies = bodies;
 #endif    
 
