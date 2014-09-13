@@ -32,7 +32,11 @@ static inline void FMM_P2M(TacoCell &c, real_t theta) {
 static inline void FMM_L2P(TacoCell &c) {
   taco_kernel::L2L(c);
   if (c.IsLeaf()) {
+#if 0    
     taco_kernel::L2P(c);
+#else
+    taco::Map(taco_kernel::L2P, c.particles());
+#endif    
   } else {
     taco::Map(FMM_L2P, c.subcells());
   }
@@ -75,7 +79,6 @@ static inline void taco_splitCell(TacoCell &Ci, TacoCell &Cj, int mutual, int ns
   }
 }
 
-// TODO
 static inline void FMM_M2L(TacoCell &Ci, TacoCell &Cj, int mutual, int nspawn) {
   //static inline void FMM_M2L(TacoCell &Ci, TacoCell &Cj, int mutual) {
   vec3 dX = Ci.attr().X - Cj.attr().X;
@@ -87,11 +90,16 @@ static inline void FMM_M2L(TacoCell &Ci, TacoCell &Cj, int mutual, int nspawn) {
     if (Cj.np() == 0) {                                     //  If the bodies weren't sent from remote node
       taco_kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
     } else {                                                  //  Else if the bodies were sent
+#if 0
       if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
         taco_kernel::P2P(Ci);                                      //    P2P kernel for single cell
       } else {                                                //   Else if source and target are different
         taco_kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
       }                                                       //   End if for same source and target
+#else
+      taco::Map(taco_kernel::P2P, taco::Product(Ci.particles(), Cj.particles()),
+                Xperiodic);
+#endif
     }                                                         //  End if for bodies
   } else {                                                    // Else if cells are close but not bodies
     taco_splitCell(Ci, Cj, mutual, nspawn);             //  Split cell and call function recursively for child

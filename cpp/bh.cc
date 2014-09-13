@@ -20,16 +20,17 @@ struct CellAttr {
 };
 
 typedef taco::Cell<DIM, real_t, particle, 0, particle, CellAttr> Cell;
+typedef taco::ParticleIterator<DIM, real_t, particle, 0, particle, CellAttr> ParticleIterator;
 
-static Vec ComputeForce(const Vec &p1, real_t m1,
-                        const Vec &p2, real_t m2) {
-  real_t R2 = ((p1 - p2) * (p1 - p2)).reduce_sum();
-  if (R2 == 0) return Vec(0, 0, 0);
-  real_t invR2 = 1.0 / R2;
-  real_t invR = std::sqrt(invR2);
-  real_t invR3 = invR2 * invR * m1 * m2;
-  Vec f1 = (p2 - p1) * invR3;
-  return f1;
+static void ComputeForce(ParticleIterator &p1, 
+                         Vec center, real_t m) {
+  real_t R2 = ((p1->X - center) * (p1->X - center)).reduce_sum();
+  if (R2 != 0) {
+    real_t invR2 = 1.0 / R2;
+    real_t invR = std::sqrt(invR2);
+    real_t invR3 = invR2 * invR * p1->m * m;
+    p1.attr().X += (center - p1->X) * invR3;
+  }
 }
 
 static void approximate(Cell &c) {
@@ -58,8 +59,10 @@ static void interact(Cell &c1, Cell &c2, real_t theta) {
     taco::Map(interact, taco::Product(c1.subcells(), c2), theta);
   } else if (c2.IsLeaf()) {
     // c1 and c2 have only one particle each. Calculate direct force.
-    c1.attr(0).X += ComputeForce(c1.particle(0).X, c1.particle(0).m,
-                                 c2.particle(0).X, c2.particle(0).m);
+    //taco::Map(ComputeForce, taco::Product(c1.particles(),
+    //c2.particles()));
+    taco::Map(ComputeForce, c1.particles(), c2.particle(0).X,
+              c2.particle(0).m);
   } else {
     // use apploximation
     const particle &p1 = c1.particle(0);
@@ -67,7 +70,7 @@ static void interact(Cell &c1, Cell &c2, real_t theta) {
     real_t d = std::sqrt(((p1.X - c2center) * (p1.X - c2center)).reduce_sum());
     real_t s = c2.width(0);
     if ((s / d) < theta) {
-      c1.attr(0).X += ComputeForce(p1.X, p1.m, c2center, c2.attr().m);
+      taco::Map(ComputeForce, c1.particles(), c2center, c2.attr().m);
     } else {
       taco::Map(interact, taco::Product(c1, c2.subcells()), theta);
     }
@@ -75,7 +78,7 @@ static void interact(Cell &c1, Cell &c2, real_t theta) {
 }
 
 
-particle *calc(struct particle *p, size_t np, int s) {
+particle *calc(struct particle *p, size_t np) {
   // PartitionBSP is a function that partitions the given set of
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
@@ -84,9 +87,10 @@ particle *calc(struct particle *p, size_t np, int s) {
   //s);
   Cell *root = taco::PartitionBSP<DIM, real_t, particle, 0,
                                   particle, CellAttr>(
-      p, np, r, s);
+                                      p, np, r, 1);
   taco::Map(approximate, *root);
   real_t theta = 0.5;
-  particle *out = taco::Map(interact, taco::Product(*root, *root), theta);
+  taco::Map(interact, taco::Product(*root, *root), theta);
+  particle *out = root->particle_attrs();
   return out;
 }

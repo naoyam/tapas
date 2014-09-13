@@ -28,6 +28,7 @@ struct CellAttr {
 
 typedef taco::Cell<3, real_t, Body, 0, kvec4, CellAttr> TacoCell;
 typedef taco::Region<3, real_t> Region;
+typedef taco::ParticleIterator<3, real_t, Body, 0, kvec4, CellAttr> TacoParticleIterator;
 
 
 #endif // EXAFMM_TACO_COMMON_H_

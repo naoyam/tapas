@@ -15,12 +15,16 @@
 namespace taco {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
+class ParticleIterator;
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class SubCellIterator;
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
+  friend class ParticleIterator<CELL_TEMPLATE_ARGS>;
   PT_ATTR *dummy_;
-  PT PT_dummy_;
+  PT *PT_dummy_;
   ATTR attr_;
   Vec<DIM, FP> min_;
   Vec<DIM, FP> max_;
@@ -37,25 +41,19 @@ class Cell {
   
   // Iterator interface
   typedef Cell value_type;
-  int size() const { return 1; }
+  typedef ATTR attr_type;  
+  unsigned size() const { return 1; }
   Cell &operator*() {
     return *this;
   }
   const Cell &operator++() const {
     return *this;
   }
-  const PT &particle(index_t idx) const {
-    return PT_dummy_;
-  }
-#if 0  
-  const PT_ATTR &ReadAttr(index_t idx) const {
-    return dummy_[0];
-  }
-#endif  
-  PT_ATTR &attr(index_t idx) const {
-    return dummy_[0];
+  PT &particle(index_t idx) const {
+    return PT_dummy_[0];
   }
   SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
+  ParticleIterator<CELL_TEMPLATE_ARGS> particles() const;
   ATTR &attr() {
     return attr_;
   }
@@ -64,6 +62,11 @@ class Cell {
   }
   FP width(int d) const {
     return max_[d] - min_[d];
+  }
+  PT_ATTR *particle_attrs() const;
+ protected:
+  PT_ATTR &attr(index_t idx) const {
+    return dummy_[0];
   }
 };
 
@@ -74,13 +77,64 @@ Cell<CELL_TEMPLATE_ARGS> *PartitionBSP(const PT *p, index_t np,
                                        int max_np);
 
 template <CELL_TEMPLATE_PARAMS>
+class ParticleIterator {
+  Cell<CELL_TEMPLATE_ARGS> &c_;
+  index_t idx_;
+ public:
+  ParticleIterator(Cell<CELL_TEMPLATE_ARGS> &c)
+      : c_(c), idx_(0) {}
+#if 0  
+  typedef PT value_type;
+#else  
+  typedef ParticleIterator value_type;
+#endif  
+  typedef PT_ATTR attr_type;  
+  index_t size() const {
+    return c_.np();
+  }
+#if 0
+  PT &&operator*() const {
+    return c_.particle(idx_);
+  }
+#else
+  const ParticleIterator &operator*() const {
+    return *this;
+  }
+  ParticleIterator &operator*() {
+    return *this;
+  }
+#endif    
+  PT *operator->() const {
+    return &(c_.particle(idx_));
+  }
+  PT_ATTR &attr() const {
+    return c_.attr(idx_);
+  }
+  Cell<CELL_TEMPLATE_ARGS> &cell() {
+    return c_;
+  }
+  const Cell<CELL_TEMPLATE_ARGS> &cell() const {
+    return c_;
+  }
+  PT &operator++() {
+    return c_.particle(++idx_);
+  }
+  bool operator==(const ParticleIterator &x) const {
+    return c_ == x.c_ && idx_ == x.idx_;
+  }
+  template <class T>
+  bool operator==(const T &x) const { return false; }
+};
+
+template <CELL_TEMPLATE_PARAMS>
 class SubCellIterator {
   const Cell<CELL_TEMPLATE_ARGS> &c_;
   int idx_;
  public:
   typedef Cell<CELL_TEMPLATE_ARGS> value_type;
+  typedef ATTR attr_type;  
   SubCellIterator(const Cell<CELL_TEMPLATE_ARGS> &c): c_(c), idx_(0) {}
-  int size() const {
+  unsigned size() const {
     if (c_.IsLeaf()) {
       return 0;
     } else {
@@ -102,8 +156,8 @@ class SubCellIterator {
 
 template <class T1, class T2>
 class ProductIterator {
-  int idx1_;
-  int idx2_;
+  index_t idx1_;
+  index_t idx2_;
   T1 &t1_;
   T2 &t2_;
  public:
@@ -113,7 +167,7 @@ class ProductIterator {
       idx2_ = 1;
     }
   }
-  int size() const {
+  unsigned size() const {
     if (t1_ == t2_) {
       return (t1_.size() + 1) * t1_.size() / 2;
     } else {
@@ -126,6 +180,13 @@ class ProductIterator {
   typename T2::value_type &second() const {
     return *t2_;
   }
+  typename T1::attr_type &attr_first() const {
+    return t1_.attr();
+  }
+  typename T2::attr_type &attr_second() const {
+    return t2_.attr();
+  }
+  
   ProductIterator<T1, T2> &operator++() {
     if (idx2_ + 1 == t2_.size()) {
       ++idx1_;
@@ -166,22 +227,79 @@ ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> > Product(
 }
 
 template <CELL_TEMPLATE_PARAMS, class T1, class T2, class... Args>
-PT_ATTR *Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Cell<CELL_TEMPLATE_ARGS>&, Args...), ProductIterator<T1, T2> prod, Args...args) {
-  for (int i = 0; i < prod.size(); ++i) {
+void Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Cell<CELL_TEMPLATE_ARGS>&, Args...), ProductIterator<T1, T2> prod, Args...args) {
+  for (unsigned i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
     ++prod;
   }
-  return NULL;
 }
 
 template <CELL_TEMPLATE_PARAMS, class T, class... Args>
-PT_ATTR *Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Args...), T iter, Args...args) {
-  for (int i = 0; i < iter.size(); ++i) {
+void Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Args...), T iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
     ++iter;
   }
-  return NULL;
 }
+#if 0
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, PT_ATTR &a2, Args...),
+         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+         iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(iter.first(), iter.attr_first(), iter.second(), iter.attr_second(), args...);
+    ++iter;
+  }
+}
+
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, Args...),
+         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+         iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(iter.first(), iter.attr_first(), iter.second(), args...);
+    ++iter;
+  }
+}
+#else
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1, Args...),
+         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+  for (index_t i = 0; i < iter.size(); ++i) {
+    f(iter, args...);
+    ++iter;
+  }
+}
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1,
+                   ParticleIterator<CELL_TEMPLATE_ARGS> &p2, Args...),
+         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+         iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(iter.first(), iter.second(), args...);
+    ++iter;
+  }
+}
+#endif
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(const PT &p1, PT_ATTR &a1, Args...),
+         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(iter.first(), iter.attr_first(), args...);
+    ++iter;
+  }
+}
+
+template <CELL_TEMPLATE_PARAMS, class... Args>
+void Map(void (*f)(const PT &p1, Args...),
+         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(iter.first(), args...);
+    ++iter;
+  }
+}
+
+
 
 } // namespace taco
 
