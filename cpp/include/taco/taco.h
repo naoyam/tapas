@@ -281,6 +281,8 @@ void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1,
   }
 }
 #endif
+
+#if 0
 template <CELL_TEMPLATE_PARAMS, class... Args>
 void Map(void (*f)(const PT &p1, PT_ATTR &a1, Args...),
          ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
@@ -298,7 +300,7 @@ void Map(void (*f)(const PT &p1, Args...),
     ++iter;
   }
 }
-
+#endif
 
 
 } // namespace taco
