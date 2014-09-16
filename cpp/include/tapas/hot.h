@@ -65,7 +65,11 @@ template <int DIM, class T>
 void AppendChildren(KeyType k, T &s, const int max_depth, const int depth_bit_width);
 
 template <int DIM>
-void SortNodes(HelperNode<DIM> *nodes, int n);
+void SortNodes(HelperNode<DIM> *nodes, index_t n);
+
+template <int DIM, class BT>
+void SortBodies(const BT *b, BT *sorted, const tapas::hot::HelperNode<DIM> *nodes,
+                tapas::index_t nb);
 
 template <int DIM>
 KeyType FindFinestAncestor(KeyType x, KeyType y, const int max_depth,
@@ -167,12 +171,21 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
 }
 
 template <int DIM>
-void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, int n) {
+void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, index_t n) {
   std::qsort(nodes, n, sizeof(HelperNode<DIM>),
              [] (const void *x, const void *y) {
                return static_cast<const HelperNode<DIM>*>(x)->key -
                    static_cast<const HelperNode<DIM>*>(y)->key;
              });
+}
+
+template <int DIM, class BT>
+void tapas::hot::SortBodies(const BT *b, BT *sorted,
+                            const tapas::hot::HelperNode<DIM> *sorted_nodes,                            
+                            tapas::index_t nb) {
+  for (index_t i = 0; i < nb; ++i) {
+    sorted[i] = b[sorted_nodes[i].p_index];
+  }
 }
 
 template <int DIM>
