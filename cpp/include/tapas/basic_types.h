@@ -1,12 +1,12 @@
-#ifndef TACO_BASIC_TYPES_H_
-#define TACO_BASIC_TYPES_H_
+#ifndef TAPAS_BASIC_TYPES_H_
+#define TAPAS_BASIC_TYPES_H_
 
 #include <cstdint>
 
-#include "taco/common.h"
-#include "taco/vec.h"
+#include "tapas/common.h"
+#include "tapas/vec.h"
 
-namespace taco {
+namespace tapas {
 
 template <int DIM, class FP>
 class Region {
@@ -45,6 +45,6 @@ struct ParticlePosOffset {
 
 };
 
-} // namespace taco
+} // namespace tapas
 
-#endif // TACO_BASIC_TYPES_H_
+#endif // TAPAS_BASIC_TYPES_H_

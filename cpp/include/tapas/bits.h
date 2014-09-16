@@ -1,9 +1,9 @@
-#ifndef TACO_BITS_H
-#define TACO_BITS_H
+#ifndef TAPAS_BITS_H
+#define TAPAS_BITS_H
 
 #include <cmath>
 
-namespace taco {
+namespace tapas {
 
 template <int N>
 struct MinBitLen {
@@ -21,6 +21,6 @@ int CalcMinBitLen(int x) {
 }
 
 
-} // namespace taco
+} // namespace tapas
 
-#endif // TACO_BITS_H
+#endif // TAPAS_BITS_H

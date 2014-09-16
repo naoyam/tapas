@@ -1,7 +1,7 @@
-#ifndef TACO_HOT_
-#define TACO_HOT_
+#ifndef TAPAS_HOT_
+#define TAPAS_HOT_
 
-#include "taco/stdcbug.h"
+#include "tapas/stdcbug.h"
 
 #include <cstdlib>
 #include <algorithm>
@@ -9,12 +9,12 @@
 #include <vector>
 #include <unordered_set>
 
-#include "taco/common.h"
-#include "taco/vec.h"
-#include "taco/basic_types.h"
-#include "taco/bits.h"
+#include "tapas/common.h"
+#include "tapas/vec.h"
+#include "tapas/basic_types.h"
+#include "tapas/bits.h"
 
-namespace taco {
+namespace tapas {
 
 namespace hot {
 
@@ -25,7 +25,7 @@ typedef std::unordered_set<KeyType> KeySet;
 
 template <class T>
 void PrintKeys(const T &s, std::ostream &os) {
-  taco::StringJoin sj;
+  tapas::StringJoin sj;
   for (auto k: s) {
     sj << k;
   }
@@ -75,29 +75,29 @@ template <int DIM>
 void CompleteRegion(KeyType x, KeyType y, KeyVector &s, const int max_depth);
 
 } // namespace hot
-} // namespace taco
+} // namespace tapas
 
 inline
-taco::hot::KeyType taco::hot::MortonKeyAppendDepth(taco::hot::KeyType k, int depth,
+tapas::hot::KeyType tapas::hot::MortonKeyAppendDepth(tapas::hot::KeyType k, int depth,
                                                    const int depth_bit_width) {
   k = (k << depth_bit_width) | depth;
   return k;
 }
 
 inline
-int taco::hot::MortonKeyGetDepth(taco::hot::KeyType k,
+int tapas::hot::MortonKeyGetDepth(tapas::hot::KeyType k,
                                  const int depth_bit_width) {
   return k & ((1 << depth_bit_width) - 1);
 }
 
 inline
-taco::hot::KeyType taco::hot::MortonKeyRemoveDepth(taco::hot::KeyType k,
+tapas::hot::KeyType tapas::hot::MortonKeyRemoveDepth(tapas::hot::KeyType k,
                                                    const int depth_bit_width) {
   return k >> depth_bit_width;
 }
 
 inline
-int taco::hot::MortonKeyIncrementDepth(taco::hot::KeyType k, int inc,
+int tapas::hot::MortonKeyIncrementDepth(tapas::hot::KeyType k, int inc,
                                        const int depth_bit_width) {
   int depth = MortonKeyGetDepth(k, depth_bit_width);
   ++depth;
@@ -106,7 +106,7 @@ int taco::hot::MortonKeyIncrementDepth(taco::hot::KeyType k, int inc,
 }
 
 template <int DIM>
-bool taco::hot::MortonKeyIsDescendant(taco::hot::KeyType asc, taco::hot::KeyType dsc,
+bool tapas::hot::MortonKeyIsDescendant(tapas::hot::KeyType asc, tapas::hot::KeyType dsc,
                                       const int max_depth, const int depth_bit_width) {
   int depth = MortonKeyGetDepth(asc, depth_bit_width);
   if (depth >= MortonKeyGetDepth(dsc, depth_bit_width)) return false;
@@ -118,7 +118,7 @@ bool taco::hot::MortonKeyIsDescendant(taco::hot::KeyType asc, taco::hot::KeyType
 
 
 template <int DIM>
-taco::hot::KeyType taco::hot::CalcMortonKey(const taco::Vec<DIM, int> &anchor,
+tapas::hot::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor,
                                             const int max_depth,
                                             const int depth_bit_width) {
   KeyType k = 0;
@@ -133,7 +133,7 @@ taco::hot::KeyType taco::hot::CalcMortonKey(const taco::Vec<DIM, int> &anchor,
 }
 
 template <int DIM, class FP, class PT, int OFFSET>
-taco::hot::HelperNode<DIM> *taco::hot::CreateInitialNodes(
+tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
     const PT *p, index_t np,
     const Region<DIM, FP> &r,
     const int max_depth) {
@@ -155,10 +155,10 @@ taco::hot::HelperNode<DIM> *taco::hot::CreateInitialNodes(
     for (int d = 0; d < DIM; ++d) {
       node.anchor[d] = (int)(off[d]);
     }
-#ifdef TACO_DEBUG
+#ifdef TAPAS_DEBUG
     assert(node.anchor >= 0);
     assert(node.anchor < (1 << max_depth));
-#endif // TACO_DEBUG
+#endif // TAPAS_DEBUG
     
     node.key = CalcMortonKey<DIM>(node.anchor, max_depth, depth_bit_width);
   }
@@ -167,7 +167,7 @@ taco::hot::HelperNode<DIM> *taco::hot::CreateInitialNodes(
 }
 
 template <int DIM>
-void taco::hot::SortNodes(taco::hot::HelperNode<DIM> *nodes, int n) {
+void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, int n) {
   std::qsort(nodes, n, sizeof(HelperNode<DIM>),
              [] (const void *x, const void *y) {
                return static_cast<const HelperNode<DIM>*>(x)->key -
@@ -176,8 +176,8 @@ void taco::hot::SortNodes(taco::hot::HelperNode<DIM> *nodes, int n) {
 }
 
 template <int DIM>
-taco::hot::KeyType taco::hot::FindFinestAncestor(taco::hot::KeyType x,
-                                                 taco::hot::KeyType y,
+tapas::hot::KeyType tapas::hot::FindFinestAncestor(tapas::hot::KeyType x,
+                                                 tapas::hot::KeyType y,
                                                  const int max_depth,
                                                  const int depth_bit_width) {
   int min_depth = std::min(MortonKeyGetDepth(x, depth_bit_width),
@@ -196,7 +196,7 @@ taco::hot::KeyType taco::hot::FindFinestAncestor(taco::hot::KeyType x,
 }
 
 template <int DIM, class T>
-void taco::hot::AppendChildren(taco::hot::KeyType x, T &s,
+void tapas::hot::AppendChildren(tapas::hot::KeyType x, T &s,
                                const int max_depth, const int depth_bit_width) {
   int x_depth = MortonKeyGetDepth(x, depth_bit_width);
   int c_depth = x_depth + 1;
@@ -211,8 +211,8 @@ void taco::hot::AppendChildren(taco::hot::KeyType x, T &s,
 
 
 template <int DIM>
-void taco::hot::CompleteRegion(taco::hot::KeyType x, taco::hot::KeyType y,
-                               taco::hot::KeyVector &s,
+void tapas::hot::CompleteRegion(tapas::hot::KeyType x, tapas::hot::KeyType y,
+                               tapas::hot::KeyVector &s,
                                const int max_depth) {
   int depth_bit_width = CalcMinBitLen(max_depth);
   KeyType fa = FindFinestAncestor<DIM>(x, y, max_depth, depth_bit_width);
@@ -237,4 +237,4 @@ void taco::hot::CompleteRegion(taco::hot::KeyType x, taco::hot::KeyType y,
   std::sort(std::begin(s), std::end(s));
 }
 
-#endif // TACO_HOT_
+#endif // TAPAS_HOT_

@@ -1,11 +1,11 @@
-#ifndef TACO_VEC_H_
-#define TACO_VEC_H_
+#ifndef TAPAS_VEC_H_
+#define TAPAS_VEC_H_
 
 #include <cstdarg>
 
-#include "taco/common.h"
+#include "tapas/common.h"
 
-namespace taco {
+namespace tapas {
 
 template <int DIM, class FP>
 class Vec {
@@ -170,4 +170,4 @@ std::ostream &operator<<(std::ostream &os, const Vec<DIM, FP> &v) {
 
 }
 
-#endif /* TACO_VEC_H_ */
+#endif /* TAPAS_VEC_H_ */

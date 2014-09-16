@@ -1,11 +1,11 @@
-#include "taco/stdcbug.h"
+#include "tapas/stdcbug.h"
 
 #include <cstdio>
 #include <iostream>
 
-#include "taco/taco.h"
+#include "tapas/tapas.h"
 
-using namespace taco;
+using namespace tapas;
 
 int main(int argc, char *argv[]) {
 

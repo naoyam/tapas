@@ -1,11 +1,11 @@
-#ifndef TACO_TEST_UTIL_H_
-#define TACO_TEST_UTIL_H_
+#ifndef TAPAS_TEST_UTIL_H_
+#define TAPAS_TEST_UTIL_H_
 
 #include <ostream>
 #include <cstdlib>
 
-#include "taco/vec.h"
-#include "taco/basic_types.h"
+#include "tapas/vec.h"
+#include "tapas/basic_types.h"
 
 using namespace std;
 
@@ -14,8 +14,8 @@ using namespace std;
 #endif
 
 typedef double real_t;
-typedef taco::Region<TEST_DIM, real_t> Region;
-typedef taco::Vec<TEST_DIM, real_t> Vec;
+typedef tapas::Region<TEST_DIM, real_t> Region;
+typedef tapas::Vec<TEST_DIM, real_t> Vec;
 
 struct particle {
   real_t pos[TEST_DIM];
@@ -23,7 +23,7 @@ struct particle {
 };
 
 template <int DIM, class FP>
-particle * GetParticles(int np, const taco::Region<DIM, FP> &r) {
+particle * GetParticles(int np, const tapas::Region<DIM, FP> &r) {
   particle *p = new particle[np];
   srand48(0);
   for (int i = 0; i < np; ++i) {
@@ -45,4 +45,4 @@ void PrintParticles(particle *pp, int np, std::ostream &os) {
   }
 }
 
-#endif // TACO_TEST_UTIL_H_
+#endif // TAPAS_TEST_UTIL_H_

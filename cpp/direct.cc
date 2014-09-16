@@ -2,19 +2,19 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "taco/taco.h"
+#include "tapas/tapas.h"
 
 #define DIM (3)
 typedef double real_t;
-typedef taco::Vec<DIM, real_t> Vec;
-typedef taco::Region<DIM, real_t> Region;
+typedef tapas::Vec<DIM, real_t> Vec;
+typedef tapas::Region<DIM, real_t> Region;
 
 struct particle {
   real_t X[4];
 };
 
-typedef taco::Cell<DIM, real_t, particle, 0, particle> Cell;
-typedef taco::ParticleIterator<DIM, real_t, particle, 0, particle> ParticleIterator;
+typedef tapas::Cell<DIM, real_t, particle, 0, particle> Cell;
+typedef tapas::ParticleIterator<DIM, real_t, particle, 0, particle> ParticleIterator;
 
 #if 0
 static void direct(const particle &p1, particle &a1,
@@ -38,13 +38,13 @@ static void direct(const particle &p1, particle &a1,
 // only c1 and c2 can be modified
 static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
-    taco::Map(direct, taco::Product(c1.particles(), c2.particles()));
+    tapas::Map(direct, tapas::Product(c1.particles(), c2.particles()));
   } else if (c1.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1, c2.subcells()));
+    tapas::Map(interact, tapas::Product(c1, c2.subcells()));
   } else if (c2.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1.subcells(), c2));
+    tapas::Map(interact, tapas::Product(c1.subcells(), c2));
   } else {
-    taco::Map(interact, taco::Product(c1.subcells(), c2.subcells()));
+    tapas::Map(interact, tapas::Product(c1.subcells(), c2.subcells()));
   }
 }
 
@@ -69,13 +69,13 @@ static void direct(ParticleIterator &p1, ParticleIterator &p2) {
 // only c1 and c2 can be modified
 static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
-    taco::Map(direct, taco::Product(c1.particles(), c2.particles()));
+    tapas::Map(direct, tapas::Product(c1.particles(), c2.particles()));
   } else if (c1.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1, c2.subcells()));
+    tapas::Map(interact, tapas::Product(c1, c2.subcells()));
   } else if (c2.IsLeaf()) {
-    taco::Map(interact, taco::Product(c1.subcells(), c2));
+    tapas::Map(interact, tapas::Product(c1.subcells(), c2));
   } else {
-    taco::Map(interact, taco::Product(c1.subcells(), c2.subcells()));
+    tapas::Map(interact, tapas::Product(c1.subcells(), c2.subcells()));
   }
 }
 
@@ -86,7 +86,7 @@ particle *calc_direct(struct particle *p, size_t np, int s) {
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
-  Cell *root = taco::PartitionBSP<DIM, real_t, particle, 0, particle>(p, np, r, s);
-  taco::Map(interact, taco::Product(*root, *root));
+  Cell *root = tapas::PartitionBSP<DIM, real_t, particle, 0, particle>(p, np, r, s);
+  tapas::Map(interact, tapas::Product(*root, *root));
   return root->particle_attrs();
 }

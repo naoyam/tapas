@@ -1,11 +1,11 @@
-#ifndef TACO_COMMON_H_
-#define TACO_COMMON_H_
+#ifndef TAPAS_COMMON_H_
+#define TAPAS_COMMON_H_
 
 #include <string>
 #include <sstream>
 #include <cassert>
 
-namespace taco {
+namespace tapas {
 
 using std::string;
 using std::ostream;
@@ -46,4 +46,4 @@ inline std::ostream& operator<<(std::ostream &os,
 
 }
 
-#endif /* TACO_COMMON_ */
+#endif /* TAPAS_COMMON_ */

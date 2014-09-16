@@ -1,7 +1,7 @@
 #include <cstdio>
-#include "taco/vec.h"
+#include "tapas/vec.h"
 
-using namespace taco;
+using namespace tapas;
 
 int main(int argc, char *argv[]) {
 

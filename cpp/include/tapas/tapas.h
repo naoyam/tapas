@@ -1,9 +1,9 @@
-#ifndef TACO_TACO_H_
-#define TACO_TACO_H_
+#ifndef TAPAS_TAPAS_H_
+#define TAPAS_TAPAS_H_
 
-#include "taco/common.h"
-#include "taco/vec.h"
-#include "taco/basic_types.h"
+#include "tapas/common.h"
+#include "tapas/vec.h"
+#include "tapas/basic_types.h"
 
 #define CELL_TEMPLATE_PARAMS \
   int DIM, class FP, class PT, int POS_OFFSET, class PT_ATTR, class ATTR=float
@@ -12,7 +12,7 @@
 #define CELL_TEMPLATE_ARGS \
   DIM, FP, PT, POS_OFFSET, PT_ATTR, ATTR
 
-namespace taco {
+namespace tapas {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class ParticleIterator;
@@ -303,13 +303,13 @@ void Map(void (*f)(const PT &p1, Args...),
 #endif
 
 
-} // namespace taco
+} // namespace tapas
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-taco::SubCellIterator<CELL_TEMPLATE_ARGS> taco::Cell<CELL_TEMPLATE_ARGS>::
+tapas::SubCellIterator<CELL_TEMPLATE_ARGS> tapas::Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
   return SubCellIterator<CELL_TEMPLATE_ARGS>(*this);
 }
 
 
-#endif /* TACO_TACO_H_ */
+#endif /* TAPAS_TAPAS_H_ */
