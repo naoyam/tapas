@@ -14,6 +14,7 @@ using namespace std;
 using tapas::hot::CalcMortonKey;
 using tapas::hot::FindFinestAncestor;
 using tapas::hot::KeyType;
+using tapas::hot::KeyPair;
 
 typedef tapas::Vec<TEST_DIM, int> VecAnchor;
 
@@ -80,6 +81,9 @@ int main(int argc, char *argv[]) {
   tapas::hot::CompleteRegion<TEST_DIM>(hn[0].key, hn[np-1].key, ks,
                                       max_depth);
   tapas::hot::PrintKeys(ks, cout);
+
+  KeyPair kp = FindBodyRange(a, hn, p, 0, np, max_depth, depth_bit_width);
+  cout << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
   
   return 0;
 }

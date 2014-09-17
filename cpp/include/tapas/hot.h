@@ -8,6 +8,7 @@
 #include <list>
 #include <vector>
 #include <unordered_set>
+#include <utility>
 
 #include "tapas/common.h"
 #include "tapas/vec.h"
@@ -22,6 +23,7 @@ typedef int KeyType;
 typedef std::list<KeyType> KeyList;
 typedef std::vector<KeyType> KeyVector;
 typedef std::unordered_set<KeyType> KeySet;
+typedef std::pair<KeyType, KeyType> KeyPair;
 
 template <class T>
 void PrintKeys(const T &s, std::ostream &os) {
@@ -60,6 +62,9 @@ bool MortonKeyIsDescendant(KeyType asc, KeyType dsc, const int max_depth,
 template <int DIM>
 KeyType CalcMortonKey(const Vec<DIM, int> &anchor, const int max_depth,
                       const int depth_bit_width);
+template <int DIM>
+KeyType CalcMortonKeyNext(const KeyType k, const int max_depth,
+                          const int depth_bit_width);
 
 template <int DIM, class T>
 void AppendChildren(KeyType k, T &s, const int max_depth, const int depth_bit_width);
@@ -77,6 +82,17 @@ KeyType FindFinestAncestor(KeyType x, KeyType y, const int max_depth,
 
 template <int DIM>
 void CompleteRegion(KeyType x, KeyType y, KeyVector &s, const int max_depth);
+
+template <int DIM>
+index_t FindFirst(const KeyType k, const HelperNode<DIM> *hn,
+                  const index_t offset, const index_t len);
+
+template <int DIM, class BT>
+KeyPair FindBodyRange(const KeyType k, const HelperNode<DIM> *hn,
+                      const BT *b, const index_t offset,
+                      const index_t len, const int max_depth,
+                      const int depth_bit_width);
+
 
 } // namespace hot
 } // namespace tapas
@@ -123,8 +139,8 @@ bool tapas::hot::MortonKeyIsDescendant(tapas::hot::KeyType asc, tapas::hot::KeyT
 
 template <int DIM>
 tapas::hot::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor,
-                                            const int max_depth,
-                                            const int depth_bit_width) {
+                                              const int max_depth,
+                                              const int depth_bit_width) {
   KeyType k = 0;
   int mask = 1 << (max_depth - 1);
   for (int i = 0; i < max_depth; ++i) {
@@ -222,6 +238,17 @@ void tapas::hot::AppendChildren(tapas::hot::KeyType x, T &s,
   }
 }
 
+// Note this doesn't return a valid morton key when the incremented
+// key overflows the overall region, but should be fine for
+// FindBodyRange method.
+template <int DIM>
+tapas::hot::KeyType tapas::hot::CalcMortonKeyNext(const KeyType k,
+                                                  const int max_depth,
+                                                  const int depth_bit_width) {
+  int d = MortonKeyGetDepth(k, depth_bit_width);
+  KeyType inc = 1 << (DIM * (max_depth - d) + depth_bit_width);
+  return k + inc;
+}
 
 template <int DIM>
 void tapas::hot::CompleteRegion(tapas::hot::KeyType x, tapas::hot::KeyType y,
@@ -249,5 +276,51 @@ void tapas::hot::CompleteRegion(tapas::hot::KeyType x, tapas::hot::KeyType y,
   }
   std::sort(std::begin(s), std::end(s));
 }
+
+template <int DIM>
+tapas::index_t tapas::hot::FindFirst(const KeyType k,
+                                     const HelperNode<DIM> *hn,
+                                     const index_t offset,
+                                     const index_t len) {
+  // Assume hn is softed by key
+  // Searches the first element that is grether or equal to the key.
+  // Returns len if not found, i.e., all elements are less than the
+  // key.
+  index_t pivot = len / 2;
+  index_t i = offset + pivot;
+  index_t cur;
+  if (hn[i].key < k) {
+    cur = offset + len;
+    index_t rem_len = len - pivot - 1;
+    if (rem_len > 0) {
+      cur = std::min(cur, FindFirst(k, hn, i + 1, rem_len));
+    }
+  } else { // (hn[i].key >= k) {
+    cur = i;
+    index_t rem_len = pivot;
+    if (rem_len > 0) {
+      cur = std::min(cur, FindFirst(k, hn, offset, rem_len));
+    }
+  }
+  return cur;
+}
+
+
+// Returns the range of bodies that are included in the cell specified
+// by the given key. 
+template <int DIM, class BT>
+tapas::hot::KeyPair tapas::hot::FindBodyRange(const tapas::hot::KeyType k,
+                                              const tapas::hot::HelperNode<DIM> *hn,
+                                              const BT *b,
+                                              const index_t offset,
+                                              const index_t len,
+                                              const int max_depth,
+                                              const int depth_bit_width) {
+  index_t body_begin = FindFirst(k, hn, offset, len);
+  KeyType next_key = CalcMortonKeyNext<DIM>(k, max_depth, depth_bit_width);
+  index_t body_end = FindFirst(next_key, hn, offset, len);
+  return std::make_pair(body_begin, body_end-body_begin);
+}
+
 
 #endif // TAPAS_HOT_
