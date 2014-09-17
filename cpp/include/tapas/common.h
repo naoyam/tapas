@@ -5,6 +5,8 @@
 #include <sstream>
 #include <cassert>
 
+#define TAPAS_DEBUG
+
 namespace tapas {
 
 using std::string;

@@ -66,6 +66,11 @@ template <int DIM>
 KeyType CalcMortonKeyNext(const KeyType k, const int max_depth,
                           const int depth_bit_width);
 
+template <int DIM>
+KeyType MortonKeyFirstChild(const KeyType k, const int max_depth,
+                            const int depth_bit_width);
+
+
 template <int DIM, class T>
 void AppendChildren(KeyType k, T &s, const int max_depth, const int depth_bit_width);
 
@@ -249,6 +254,18 @@ tapas::KeyType tapas::hot::CalcMortonKeyNext(const KeyType k,
   KeyType inc = 1 << (DIM * (max_depth - d) + depth_bit_width);
   return k + inc;
 }
+
+template <int DIM>
+tapas::KeyType tapas::hot::MortonKeyFirstChild(const KeyType k, const int max_depth,
+                                               const int depth_bit_width) {
+#ifdef TAPAS_DEBUG
+  KeyType t = MortonKeyRemoveDepth(k, depth_bit_width);
+  t = t & ~(~((KeyType)0) << (DIM * (max_depth - MortonKeyGetDepth(k, depth_bit_width))));
+  assert(t == 0);
+#endif  
+  return MortonKeyIncrementDepth(k, 1, depth_bit_width);
+}
+
 
 template <int DIM>
 void tapas::hot::CompleteRegion(tapas::KeyType x, tapas::KeyType y,

@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
   TAPAS_LOG_DEBUG() << "Keys: " << hn[0].key << "->" << hn[np-1].key << endl;
   
-  auto *root = tapas::PartitionHOT<TEST_DIM, real_t, particle, 0, particle>()(
-      p, np, r, max_nb, max_depth);
+  auto *root = tapas::PartitionHOT<TEST_DIM, real_t, particle, 0, particle>(
+      max_nb, max_depth)(p, np, r);
   return 0;
 }
