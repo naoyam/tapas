@@ -30,6 +30,9 @@ class Region {
   const Vec<DIM, FP> &max() const {
     return max_;
   }
+  FP width(int d) const {
+    return max_[d] - min_[d];
+  }
 };
 
 template <int OFFSET, class FP>

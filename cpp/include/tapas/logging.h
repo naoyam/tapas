@@ -9,7 +9,7 @@
 #define TAPAS_LOG_LEVEL_INFO 2
 #define TAPAS_LOG_LEVEL_DEBUG 3
 #ifndef TAPAS_LOG_LEVEL
-#define TAPAS_LOG_LEVEL TAPAS_LOG_LEVEL_INFO
+#define TAPAS_LOG_LEVEL TAPAS_LOG_LEVEL_DEBUG
 #endif
 
 #define TAPAS_TRACE 1
@@ -44,7 +44,7 @@ class Logger {
                  const char *func, int line, int offset) const {
     if (enabled_) {
       os_ << "[" << error_level << ": ";
-      for (int i = 0; i < offset; ++i) os_ << " ";
+      //for (int i = 0; i < offset; ++i) os_ << " ";
       os_ << func << "@"
           << file_path_basename(file) << "#" << line << "] ";
     }

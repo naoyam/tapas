@@ -26,12 +26,15 @@ class Cell {
   PT_ATTR *dummy_;
   PT *PT_dummy_;
   ATTR attr_;
-  Vec<DIM, FP> min_;
-  Vec<DIM, FP> max_;
+  Region<DIM, FP> region_;
+  index_t bid_;
+  index_t nb_;
  public:
+  Cell(const Region<DIM, FP> &region, index_t bid, index_t nb):
+      region_(region), bid_(bid), nb_(nb) {}
   bool IsRoot() const; // TODO
   bool IsLeaf() const;// TODO
-  index_t np() const;// TODO
+  index_t nb() const { return nb_; }
   int nsubcells() const;// TODO  
   Cell &subcell(int idx) const; // TODO
   Cell &parent() const; // TODO  
@@ -61,20 +64,14 @@ class Cell {
     return attr_;
   }
   FP width(int d) const {
-    return max_[d] - min_[d];
+    return region_.width(d);
   }
   PT_ATTR *particle_attrs() const;
  protected:
   PT_ATTR &attr(index_t idx) const {
     return dummy_[0];
   }
-};
-
-
-template <CELL_TEMPLATE_PARAMS>
-Cell<CELL_TEMPLATE_ARGS> *PartitionBSP(const PT *p, index_t np,
-                                       const Region<DIM, FP> &r,
-                                       int max_np);
+}; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>
 class ParticleIterator {
@@ -90,7 +87,7 @@ class ParticleIterator {
 #endif  
   typedef PT_ATTR attr_type;  
   index_t size() const {
-    return c_.np();
+    return c_.nb();
   }
 #if 0
   PT &&operator*() const {
@@ -152,7 +149,7 @@ class SubCellIterator {
   }
   template <class T>
   bool operator==(const T &x) const { return false; }
-};
+}; // class SubCellIterator
 
 template <class T1, class T2>
 class ProductIterator {
@@ -200,7 +197,7 @@ class ProductIterator {
     }
     return *this;
   }
-};
+}; // class ProductIterator
 
 template <class T1, class T2>
 ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
@@ -302,7 +299,6 @@ void Map(void (*f)(const PT &p1, Args...),
 }
 #endif
 
-
 } // namespace tapas
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
@@ -311,5 +307,8 @@ subcells() const {
   return SubCellIterator<CELL_TEMPLATE_ARGS>(*this);
 }
 
+#undef CELL_TEMPLATE_PARAMS
+#undef CELL_TEMPLATE_PARAMS_NO_DEF
+#undef CELL_TEMPLATE_ARGS
 
 #endif /* TAPAS_TAPAS_H_ */
