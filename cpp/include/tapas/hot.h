@@ -128,7 +128,7 @@ tapas::hot::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor
   KeyType k = 0;
   int mask = 1 << (max_depth - 1);
   for (int i = 0; i < max_depth; ++i) {
-    for (int d = 0; d < DIM; ++d) {
+    for (int d = DIM-1; d >= 0; --d) {
       k = (k << 1) | ((anchor[d] & mask) >> (max_depth - i - 1));
     }
     mask >>= 1;
