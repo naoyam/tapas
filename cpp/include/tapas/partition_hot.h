@@ -7,6 +7,7 @@
 #include "tapas/tapas.h" // class Cell
 #include "tapas/hot.h" // needs refactoring
 #include "tapas/logging.h"
+#include "tapas/debug_util.h"
 
 #define CELL_TEMPLATE_PARAMS \
   int DIM, class FP, class BT, int POS_OFFSET, class BT_ATTR, class ATTR=float
@@ -33,8 +34,15 @@ class PartitionHOT {
   Cell<CELL_TEMPLATE_ARGS> *operator()(BT *b, index_t nb,
                                        const Region<DIM, FP> &r);
  private:
-  void Refine(CELL *c, const int cur_depth, const KeyType cur_key) const;
+  void Refine(CELL *c,
+              const hot::HelperNode<DIM> *hn,
+              const BT *b,
+              int cur_depth,
+              KeyType cur_key) const;
+
+  
 }; // class PartitionHOT
+
 
 } // namespace tapas
 
@@ -54,19 +62,22 @@ tapas::Cell<CELL_TEMPLATE_ARGS> *tapas::PartitionHOT<CELL_TEMPLATE_ARGS>::operat
   std::memcpy(b, b_work, sizeof(BT) * nb);
 
   KeyType root_key = 0;
-  KeyPair kp = hot::FindBodyRange(root_key, hn, b, 0, nb, max_depth_, depth_bit_width_);
+  KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb, max_depth_, depth_bit_width_);
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
   auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb);
-  Refine(root, 0, 0);
+  Refine(root, hn, b, 0, 0);
   
   return root;
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 void tapas::PartitionHOT<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
-                                                     const int cur_depth,
-                                                     const KeyType cur_key) const {
+                                                     const hot::HelperNode<DIM> *hn,
+                                                     const BT *b,
+                                                     int cur_depth,
+                                                     KeyType cur_key) const {
+  TAPAS_LOG_DEBUG() << "Current depth: " << cur_depth << std::endl;
   if (c->nb() <= max_nb_) {
     TAPAS_LOG_DEBUG() << "Small enough cell" << std::endl;
     return;
@@ -75,9 +86,25 @@ void tapas::PartitionHOT<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
     TAPAS_LOG_DEBUG() << "Reached maximum depth" << std::endl;
     return;
   }
-  KeyType first_child = hot::MortonKeyFirstChild<DIM>(cur_key, max_depth_, depth_bit_width_);
-  TAPAS_LOG_DEBUG() << "First child: " << first_child << std::endl;
-  // TODO
+  KeyType child_key = hot::MortonKeyFirstChild<DIM>(cur_key, max_depth_, depth_bit_width_);
+  index_t cur_offset = c->bid();
+  index_t cur_len = c->nb();
+  for (int i = 0; i < (1 << DIM); ++i) {
+    TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
+    index_t child_bn = hot::GetBodyNumber(child_key, hn, b, cur_offset, cur_len,
+                                          max_depth_, depth_bit_width_);
+    TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
+                      << child_bn << "\n";
+    auto child_r = c->region().PartitionBSP(i);
+    auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(child_r, cur_offset,
+                                                    child_bn);
+    TAPAS_LOG_DEBUG() << "Particles: \n";
+    tapas::debug::PrintBodies<DIM, FP, BT, POS_OFFSET>(b+cur_offset, child_bn, std::cerr);
+    Refine(child_cell, hn, b, cur_depth+1, child_key);
+    child_key = hot::CalcMortonKeyNext<DIM>(child_key, max_depth_, depth_bit_width_);
+    cur_offset = cur_offset + child_bn;
+    cur_len = cur_len - child_bn;
+  }
 }
 
 #undef CELL_TEMPLATE_PARAMS

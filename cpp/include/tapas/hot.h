@@ -93,11 +93,16 @@ index_t FindFirst(const KeyType k, const HelperNode<DIM> *hn,
                   const index_t offset, const index_t len);
 
 template <int DIM, class BT>
-KeyPair FindBodyRange(const KeyType k, const HelperNode<DIM> *hn,
-                      const BT *b, const index_t offset,
-                      const index_t len, const int max_depth,
-                      const int depth_bit_width);
+KeyPair GetBodyRange(const KeyType k, const HelperNode<DIM> *hn,
+                     const BT *b, index_t offset,
+                     index_t len, int max_depth,
+                     int depth_bit_width);
 
+template <int DIM, class BT>
+index_t GetBodyNumber(const KeyType k, const HelperNode<DIM> *hn,
+                      const BT *b, index_t offset,
+                      index_t len, int max_depth,
+                      int depth_bit_width);
 
 } // namespace hot
 } // namespace tapas
@@ -174,7 +179,7 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
     HelperNode<DIM> &node = nodes[i];
     node.p_index = i;
     node.np = 1;
-    Vec<DIM, FP> off = ParticlePosOffset<0, FP>::template vec<DIM>((const void*)&(p[i]));
+    Vec<DIM, FP> off = ParticlePosOffset<DIM, FP, OFFSET>::vec((const void*)&(p[i]));
     off -= r.min();
     off /= pitch;
     for (int d = 0; d < DIM; ++d) {
@@ -326,17 +331,32 @@ tapas::index_t tapas::hot::FindFirst(const KeyType k,
 // Returns the range of bodies that are included in the cell specified
 // by the given key. 
 template <int DIM, class BT>
-tapas::KeyPair tapas::hot::FindBodyRange(const tapas::KeyType k,
+tapas::KeyPair tapas::hot::GetBodyRange(const tapas::KeyType k,
+                                        const tapas::hot::HelperNode<DIM> *hn,
+                                        const BT *b,
+                                        index_t offset,
+                                        index_t len,
+                                        int max_depth,
+                                        int depth_bit_width) {
+  index_t body_begin = FindFirst(k, hn, offset, len);
+  index_t body_num = GetBodyNumber(k, hn, b, body_begin,
+                                   len-(body_begin-offset),
+                                   max_depth, depth_bit_width);
+  return std::make_pair(body_begin, body_num);
+}
+
+template <int DIM, class BT>
+tapas::index_t tapas::hot::GetBodyNumber(const tapas::KeyType k,
                                          const tapas::hot::HelperNode<DIM> *hn,
                                          const BT *b,
-                                         const index_t offset,
-                                         const index_t len,
-                                         const int max_depth,
-                                         const int depth_bit_width) {
-  index_t body_begin = FindFirst(k, hn, offset, len);
+                                         index_t offset,
+                                         index_t len,
+                                         int max_depth,
+                                         int depth_bit_width) {
+  //index_t body_begin = FindFirst(k, hn, offset, len);
   KeyType next_key = CalcMortonKeyNext<DIM>(k, max_depth, depth_bit_width);
-  index_t body_end = FindFirst(next_key, hn, offset, len);
-  return std::make_pair(body_begin, body_end-body_begin);
+  index_t body_end = FindFirst(next_key, hn, offset+1, len-1);
+  return body_end - offset;
 }
 
 

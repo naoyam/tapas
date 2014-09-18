@@ -34,6 +34,7 @@ class Cell {
       region_(region), bid_(bid), nb_(nb) {}
   bool IsRoot() const; // TODO
   bool IsLeaf() const;// TODO
+  index_t bid() const { return bid_; }
   index_t nb() const { return nb_; }
   int nsubcells() const;// TODO  
   Cell &subcell(int idx) const; // TODO
@@ -62,6 +63,9 @@ class Cell {
   }
   const ATTR &attr() const {
     return attr_;
+  }
+  const Region<DIM, FP> &region() const {
+    return region_;
   }
   FP width(int d) const {
     return region_.width(d);
