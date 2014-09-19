@@ -65,7 +65,7 @@ tapas::Cell<CELL_TEMPLATE_ARGS> *tapas::PartitionHOT<CELL_TEMPLATE_ARGS>::operat
   KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb, max_depth_, depth_bit_width_);
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
-  auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb);
+  auto *root = new Cell<CELL_TEMPLATE_ARGS>(root_key, r, 0, nb);
   Refine(root, hn, b, 0, 0);
   
   return root;
@@ -96,8 +96,8 @@ void tapas::PartitionHOT<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
     TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
                       << child_bn << "\n";
     auto child_r = c->region().PartitionBSP(i);
-    auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(child_r, cur_offset,
-                                                    child_bn);
+    auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
+        child_key, child_r, cur_offset, child_bn);
     TAPAS_LOG_DEBUG() << "Particles: \n";
     tapas::debug::PrintBodies<DIM, FP, BT, POS_OFFSET>(b+cur_offset, child_bn, std::cerr);
     Refine(child_cell, hn, b, cur_depth+1, child_key);

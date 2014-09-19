@@ -23,6 +23,7 @@ class SubCellIterator;
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
   friend class ParticleIterator<CELL_TEMPLATE_ARGS>;
+  KeyType key_;
   PT_ATTR *dummy_;
   PT *PT_dummy_;
   ATTR attr_;
@@ -30,8 +31,9 @@ class Cell {
   index_t bid_;
   index_t nb_;
  public:
-  Cell(const Region<DIM, FP> &region, index_t bid, index_t nb):
-      region_(region), bid_(bid), nb_(nb) {}
+  Cell(KeyType key, const Region<DIM, FP> &region, index_t bid, index_t nb):
+      key_(key), region_(region), bid_(bid), nb_(nb) {}
+  KeyType key() const { return key_; }
   bool IsRoot() const; // TODO
   bool IsLeaf() const;// TODO
   index_t bid() const { return bid_; }
