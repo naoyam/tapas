@@ -9,21 +9,29 @@
 #include <vector>
 #include <unordered_set>
 #include <utility>
+#include <iostream>
 
-#include "tapas/common.h"
-#include "tapas/vec.h"
-#include "tapas/basic_types.h"
-#include "tapas/bits.h"
+#include "tapas/cell.h"
+#include "tapas/bitarith.h"
+#include "tapas/logging.h"
+#include "tapas/debug_util.h"
+
+#define CELL_TEMPLATE_PARAMS \
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR=float
+#define CELL_TEMPLATE_PARAMS_NO_DEF \
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR
+#define CELL_TEMPLATE_ARGS \
+  DIM, FP, BT, BT_ATTR, ATTR
+#define CELL Cell<CELL_TEMPLATE_ARGS>
 
 namespace tapas {
 
+// REFAACTORING: This should not be located here
 typedef int KeyType;
 typedef std::list<KeyType> KeyList;
 typedef std::vector<KeyType> KeyVector;
 typedef std::unordered_set<KeyType> KeySet;
 typedef std::pair<KeyType, KeyType> KeyPair;
-
-namespace hot {
 
 template <class T>
 void PrintKeys(const T &s, std::ostream &os) {
@@ -34,6 +42,8 @@ void PrintKeys(const T &s, std::ostream &os) {
   os << "Key set: " << sj << std::endl;
 }
 
+namespace hot {
+
 template <int DIM>
 struct HelperNode {
   KeyType key; // Morton key
@@ -42,8 +52,8 @@ struct HelperNode {
   index_t np;
 };
 
-template <int DIM, class FP, class PT, int OFFSET>
-HelperNode<DIM> *CreateInitialNodes(const PT *p, index_t np, 
+template <int DIM, class FP, class BT>
+HelperNode<DIM> *CreateInitialNodes(const typename BT::type *p, index_t np, 
                                     const Region<DIM, FP> &r,
                                     const int max_depth);
 
@@ -78,7 +88,8 @@ template <int DIM>
 void SortNodes(HelperNode<DIM> *nodes, index_t n);
 
 template <int DIM, class BT>
-void SortBodies(const BT *b, BT *sorted, const tapas::hot::HelperNode<DIM> *nodes,
+void SortBodies(const typename BT::type *b, typename BT::type *sorted,
+                const tapas::hot::HelperNode<DIM> *nodes,
                 tapas::index_t nb);
 
 template <int DIM>
@@ -103,6 +114,35 @@ index_t GetBodyNumber(const KeyType k, const HelperNode<DIM> *hn,
                       const BT *b, index_t offset,
                       index_t len, int max_depth,
                       int depth_bit_width);
+
+template <CELL_TEMPLATE_PARAMS>
+class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
+  KeyType key_;
+ public:
+  Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
+       KeyType key):
+      tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key) {}
+};
+
+template <CELL_TEMPLATE_PARAMS>    
+class Partition {
+ private:
+  const int max_nb_;
+  const int max_depth_;
+  const int depth_bit_width_;
+  
+ public:
+  Partition(int max_nb, int max_depth):
+      max_nb_(max_nb), max_depth_(max_depth),
+      depth_bit_width_(CalcMinBitLen(max_depth)) {}
+  Cell<CELL_TEMPLATE_ARGS> *operator()(typename BT::type *b, index_t nb,
+                                       const Region<DIM, FP> &r);
+ private:
+  void Refine(CELL *c, const hot::HelperNode<DIM> *hn,
+              const typename BT::type *b, int cur_depth,
+              KeyType cur_key) const;
+  
+}; // class PartitionHOT
 
 } // namespace hot
 } // namespace tapas
@@ -162,9 +202,9 @@ tapas::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor,
   return MortonKeyAppendDepth(k, max_depth, depth_bit_width);
 }
 
-template <int DIM, class FP, class PT, int OFFSET>
+template <int DIM, class FP, class BT>
 tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
-    const PT *p, index_t np,
+    const typename BT::type *p, index_t np,
     const Region<DIM, FP> &r,
     const int max_depth) {
 
@@ -179,7 +219,7 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
     HelperNode<DIM> &node = nodes[i];
     node.p_index = i;
     node.np = 1;
-    Vec<DIM, FP> off = ParticlePosOffset<DIM, FP, OFFSET>::vec((const void*)&(p[i]));
+    Vec<DIM, FP> off = ParticlePosOffset<DIM, FP, BT::pos_offset>::vec((const void*)&(p[i]));
     off -= r.min();
     off /= pitch;
     for (int d = 0; d < DIM; ++d) {
@@ -206,8 +246,8 @@ void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, index_t n) {
 }
 
 template <int DIM, class BT>
-void tapas::hot::SortBodies(const BT *b, BT *sorted,
-                            const tapas::hot::HelperNode<DIM> *sorted_nodes,                            
+void tapas::hot::SortBodies(const typename BT::type *b, typename BT::type *sorted,
+                            const tapas::hot::HelperNode<DIM> *sorted_nodes,
                             tapas::index_t nb) {
   for (index_t i = 0; i < nb; ++i) {
     sorted[i] = b[sorted_nodes[i].p_index];
@@ -280,7 +320,7 @@ void tapas::hot::CompleteRegion(tapas::KeyType x, tapas::KeyType y,
   KeyType fa = FindFinestAncestor<DIM>(x, y, max_depth, depth_bit_width);
   KeyList w;
   AppendChildren<DIM>(fa, w, max_depth, depth_bit_width);
-  PrintKeys(w, std::cout);
+  tapas::PrintKeys(w, std::cout);
   while (w.size() > 0) {
     KeyType k = w.front();
     w.pop_front();
@@ -359,5 +399,70 @@ tapas::index_t tapas::hot::GetBodyNumber(const tapas::KeyType k,
   return body_end - offset;
 }
 
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>::operator()(
+    typename BT::type *b, index_t nb,
+    const Region<DIM, FP> &r) {
+
+  typename BT::type *b_work = new typename BT::type[nb];
+  //const int depth_bit_width = CalcMinBitLen(max_depth);
+  HelperNode<DIM> *hn =
+      CreateInitialNodes<DIM, FP, BT>(b, nb, r, max_depth_);
+
+  SortNodes<DIM>(hn, nb);
+  SortBodies<DIM, BT>(b, b_work, hn, nb);
+  std::memcpy(b, b_work, sizeof(BT) * nb);
+
+  KeyType root_key = 0;
+  KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb, max_depth_, depth_bit_width_);
+  TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
+
+  auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
+  Refine(root, hn, b, 0, 0);
+  
+  return root;
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+void tapas::hot::Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
+                                                       const HelperNode<DIM> *hn,
+                                                       const typename BT::type *b,
+                                                       int cur_depth,
+                                                       KeyType cur_key) const {
+  TAPAS_LOG_DEBUG() << "Current depth: " << cur_depth << std::endl;
+  if (c->nb() <= max_nb_) {
+    TAPAS_LOG_DEBUG() << "Small enough cell" << std::endl;
+    return;
+  }
+  if (cur_depth > max_depth_) {
+    TAPAS_LOG_DEBUG() << "Reached maximum depth" << std::endl;
+    return;
+  }
+  KeyType child_key = MortonKeyFirstChild<DIM>(cur_key, max_depth_, depth_bit_width_);
+  index_t cur_offset = c->bid();
+  index_t cur_len = c->nb();
+  for (int i = 0; i < (1 << DIM); ++i) {
+    TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
+    index_t child_bn = GetBodyNumber(child_key, hn, b, cur_offset, cur_len,
+                                          max_depth_, depth_bit_width_);
+    TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
+                      << child_bn << "\n";
+    auto child_r = c->region().PartitionBSP(i);
+    auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
+        child_r, cur_offset, child_bn, child_key);
+    TAPAS_LOG_DEBUG() << "Particles: \n";
+    tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
+    Refine(child_cell, hn, b, cur_depth+1, child_key);
+    child_key = hot::CalcMortonKeyNext<DIM>(child_key, max_depth_, depth_bit_width_);
+    cur_offset = cur_offset + child_bn;
+    cur_len = cur_len - child_bn;
+  }
+}
+
+
+#undef CELL_TEMPLATE_PARAMS
+#undef CELL_TEMPLATE_PARAMS_NO_DEF
+#undef CELL_TEMPLATE_ARGS
+#undef CELL
 
 #endif // TAPAS_HOT_
