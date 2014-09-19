@@ -34,13 +34,15 @@ class Cell {
  public:
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb):
       region_(region), bid_(bid), nb_(nb) {}
-  bool IsRoot() const; // implemented in concrete classes
-  bool IsLeaf() const; // implemented in concrete classes
   index_t bid() const { return bid_; }
   index_t nb() const { return nb_; }
-  int nsubcells() const; // implemented in concrete classes
-  Cell &subcell(int idx) const; // implemented in concrete classes
-  Cell &parent() const; // implemented in concrete classes
+  const Region<DIM, FP> &region() const {
+    return region_;
+  }
+  FP width(int d) const {
+    return region_.width(d);
+  }
+  
   bool operator==(const Cell &c) const;
   template <class T>
   bool operator==(const T &x) const { return false; }
@@ -55,34 +57,30 @@ class Cell {
   const Cell &operator++() const {
     return *this;
   }
-  typename BT::type &particle(index_t idx) const; // implemented in concrete classes
-#if 0  
-  BT::type &particle(index_t idx) const {
-    return PT_dummy_[0];
-  }
-#endif  
+
   SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
   ParticleIterator<CELL_TEMPLATE_ARGS> particles() const;
+
+  // Cell attributes
   ATTR &attr() {
     return attr_;
   }
   const ATTR &attr() const {
     return attr_;
   }
-  const Region<DIM, FP> &region() const {
-    return region_;
-  }
-  FP width(int d) const {
-    return region_.width(d);
-  }
+
+  // Following methods are to be implemented in sub-classes 
+  bool IsRoot() const;
+  bool IsLeaf() const;
+  int nsubcells() const;
+  Cell &subcell(int idx) const; 
+  Cell &parent() const;
+  typename BT::type &particle(index_t idx) const;
   BT_ATTR *particle_attrs() const;
+  
  protected:
   BT_ATTR &attr(index_t idx) const;
-#if 0  
-  BT_ATTR &attr(index_t idx) const {
-    return dummy_[0];
-  }
-#endif  
+  
 }; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>

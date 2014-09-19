@@ -122,6 +122,20 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
        KeyType key):
       tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key) {}
+  
+  KeyType key() const { return key_; }
+
+  // 
+  bool IsRoot() const;
+  bool IsLeaf() const;
+  int nsubcells() const;
+  Cell &subcell(int idx) const; 
+  Cell &parent() const;
+  typename BT::type &particle(index_t idx) const;
+  BT_ATTR *particle_attrs() const;
+  
+ protected:
+  BT_ATTR &attr(index_t idx) const;
 };
 
 template <CELL_TEMPLATE_PARAMS>    
