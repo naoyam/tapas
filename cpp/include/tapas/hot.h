@@ -8,6 +8,7 @@
 #include <list>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include <utility>
 #include <iostream>
 
@@ -17,12 +18,18 @@
 #include "tapas/debug_util.h"
 
 #define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=float
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
 #define CELL_TEMPLATE_PARAMS_NO_DEF \
   int DIM, class FP, class BT, class BT_ATTR, class ATTR
 #define CELL_TEMPLATE_ARGS \
   DIM, FP, BT, BT_ATTR, ATTR
 #define CELL Cell<CELL_TEMPLATE_ARGS>
+
+#define DEPTH_BIT_WIDTH (6)
+#define MAX_DEPTH (1 << DEPTH_BIT_WIDTH) // TODO system level
+                                         // MAX_depth and
+                                         // tree-specific max_depth
+
 
 namespace tapas {
 
@@ -44,6 +51,8 @@ void PrintKeys(const T &s, std::ostream &os) {
 
 namespace hot {
 
+using std::unordered_map;
+
 template <int DIM>
 struct HelperNode {
   KeyType key; // Morton key
@@ -52,37 +61,38 @@ struct HelperNode {
   index_t np;
 };
 
+
+
 template <int DIM, class FP, class BT>
 HelperNode<DIM> *CreateInitialNodes(const typename BT::type *p, index_t np, 
                                     const Region<DIM, FP> &r,
                                     const int max_depth);
 
-KeyType MortonKeyAppendDepth(KeyType k, int depth, const int depth_bit_width);
+KeyType MortonKeyAppendDepth(KeyType k, int depth);
 
-int MortonKeyGetDepth(KeyType k, const int depth_bit_width);
+int MortonKeyGetDepth(KeyType k);
 
-KeyType MortonKeyRemoveDepth(KeyType k, const int depth_bit_width);
+KeyType MortonKeyRemoveDepth(KeyType k);
 
-int MortonKeyIncrementDepth(KeyType k, int inc, const int depth_bit_width);
-
-template <int DIM>
-bool MortonKeyIsDescendant(KeyType asc, KeyType dsc, const int max_depth,
-                           const int depth_bit_width);
+int MortonKeyIncrementDepth(KeyType k, int inc);
 
 template <int DIM>
-KeyType CalcMortonKey(const Vec<DIM, int> &anchor, const int max_depth,
-                      const int depth_bit_width);
-template <int DIM>
-KeyType CalcMortonKeyNext(const KeyType k, const int max_depth,
-                          const int depth_bit_width);
+bool MortonKeyIsDescendant(KeyType asc, KeyType dsc, const int max_depth);
 
 template <int DIM>
-KeyType MortonKeyFirstChild(const KeyType k, const int max_depth,
-                            const int depth_bit_width);
+KeyType CalcMortonKey(const Vec<DIM, int> &anchor, const int max_depth);
+                      
+template <int DIM>
+KeyType CalcMortonKeyNext(const KeyType k, const int max_depth);
+
+
+template <int DIM>
+KeyType MortonKeyFirstChild(const KeyType k, const int max_depth);
+
 
 
 template <int DIM, class T>
-void AppendChildren(KeyType k, T &s, const int max_depth, const int depth_bit_width);
+void AppendChildren(KeyType k, T &s, const int max_depth);
 
 template <int DIM>
 void SortNodes(HelperNode<DIM> *nodes, index_t n);
@@ -93,8 +103,7 @@ void SortBodies(const typename BT::type *b, typename BT::type *sorted,
                 tapas::index_t nb);
 
 template <int DIM>
-KeyType FindFinestAncestor(KeyType x, KeyType y, const int max_depth,
-                           const int depth_bit_width);
+KeyType FindFinestAncestor(KeyType x, KeyType y, const int max_depth);
 
 template <int DIM>
 void CompleteRegion(KeyType x, KeyType y, KeyVector &s, const int max_depth);
@@ -106,22 +115,32 @@ index_t FindFirst(const KeyType k, const HelperNode<DIM> *hn,
 template <int DIM, class BT>
 KeyPair GetBodyRange(const KeyType k, const HelperNode<DIM> *hn,
                      const BT *b, index_t offset,
-                     index_t len, int max_depth,
-                     int depth_bit_width);
+                     index_t len, int max_depth);
+
 
 template <int DIM, class BT>
 index_t GetBodyNumber(const KeyType k, const HelperNode<DIM> *hn,
                       const BT *b, index_t offset,
-                      index_t len, int max_depth,
-                      int depth_bit_width);
+                      index_t len, int max_depth);
+
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>    
+class Partition;
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
-  KeyType key_;
+  friend class tapas::hot::Partition<CELL_TEMPLATE_ARGS>;
  public:
+  typedef unordered_map<KeyType, Cell> HashTable;
+ protected:
+  KeyType key_;
+  HashTable &ht_;
+ public:
+
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
-       KeyType key):
-      tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key) {}
+       KeyType key, HashTable &ht):
+      tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
+      ht_(ht) {}
   
   KeyType key() const { return key_; }
 
@@ -136,6 +155,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   
  protected:
   BT_ATTR &attr(index_t idx) const;
+  HashTable &ht() { return ht_; }
 };
 
 template <CELL_TEMPLATE_PARAMS>    
@@ -143,12 +163,11 @@ class Partition {
  private:
   const int max_nb_;
   const int max_depth_;
-  const int depth_bit_width_;
   
  public:
   Partition(int max_nb, int max_depth):
-      max_nb_(max_nb), max_depth_(max_depth),
-      depth_bit_width_(CalcMinBitLen(max_depth)) {}
+      max_nb_(max_nb), max_depth_(max_depth) {}
+      
   Cell<CELL_TEMPLATE_ARGS> *operator()(typename BT::type *b, index_t nb,
                                        const Region<DIM, FP> &r);
  private:
@@ -162,39 +181,35 @@ class Partition {
 } // namespace tapas
 
 inline
-tapas::KeyType tapas::hot::MortonKeyAppendDepth(tapas::KeyType k, int depth,
-                                                const int depth_bit_width) {
-  k = (k << depth_bit_width) | depth;
+tapas::KeyType tapas::hot::MortonKeyAppendDepth(tapas::KeyType k, int depth) {
+  k = (k << DEPTH_BIT_WIDTH) | depth;
   return k;
 }
 
 inline
-int tapas::hot::MortonKeyGetDepth(tapas::KeyType k,
-                                  const int depth_bit_width) {
-  return k & ((1 << depth_bit_width) - 1);
+int tapas::hot::MortonKeyGetDepth(tapas::KeyType k) {
+  return k & ((1 << DEPTH_BIT_WIDTH) - 1);
 }
 
 inline
-tapas::KeyType tapas::hot::MortonKeyRemoveDepth(tapas::KeyType k,
-                                                const int depth_bit_width) {
-  return k >> depth_bit_width;
+tapas::KeyType tapas::hot::MortonKeyRemoveDepth(tapas::KeyType k) {
+  return k >> DEPTH_BIT_WIDTH;
 }
 
 inline
-int tapas::hot::MortonKeyIncrementDepth(tapas::KeyType k, int inc,
-                                        const int depth_bit_width) {
-  int depth = MortonKeyGetDepth(k, depth_bit_width);
+int tapas::hot::MortonKeyIncrementDepth(tapas::KeyType k, int inc) {
+  int depth = MortonKeyGetDepth(k);
   ++depth;
-  k = MortonKeyRemoveDepth(k, depth_bit_width);
-  return MortonKeyAppendDepth(k, depth, depth_bit_width);
+  k = MortonKeyRemoveDepth(k);
+  return MortonKeyAppendDepth(k, depth);
 }
 
 template <int DIM>
 bool tapas::hot::MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc,
-                                       const int max_depth, const int depth_bit_width) {
-  int depth = MortonKeyGetDepth(asc, depth_bit_width);
-  if (depth >= MortonKeyGetDepth(dsc, depth_bit_width)) return false;
-  int s = (max_depth - depth) * DIM + depth_bit_width;
+                                       const int max_depth) {
+  int depth = MortonKeyGetDepth(asc);
+  if (depth >= MortonKeyGetDepth(dsc)) return false;
+  int s = (max_depth - depth) * DIM + DEPTH_BIT_WIDTH;
   asc >>= s;
   dsc >>= s;
   return asc == dsc;
@@ -203,8 +218,7 @@ bool tapas::hot::MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc,
 
 template <int DIM>
 tapas::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor,
-                                         const int max_depth,
-                                         const int depth_bit_width) {
+                                         const int max_depth) {
   KeyType k = 0;
   int mask = 1 << (max_depth - 1);
   for (int i = 0; i < max_depth; ++i) {
@@ -213,7 +227,7 @@ tapas::KeyType tapas::hot::CalcMortonKey(const tapas::Vec<DIM, int> &anchor,
     }
     mask >>= 1;
   }
-  return MortonKeyAppendDepth(k, max_depth, depth_bit_width);
+  return MortonKeyAppendDepth(k, max_depth);
 }
 
 template <int DIM, class FP, class BT>
@@ -225,7 +239,6 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
   HelperNode<DIM> *nodes = new HelperNode<DIM>[np];
   FP num_cell = 1 << max_depth;
   Vec<DIM, FP> pitch;
-  const int depth_bit_width = CalcMinBitLen(max_depth);
   for (int d = 0; d < DIM; ++d) {
     pitch[d] = (r.max()[d] - r.min()[d]) / num_cell;
   }
@@ -244,7 +257,7 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
     assert(node.anchor < (1 << max_depth));
 #endif // TAPAS_DEBUG
     
-    node.key = CalcMortonKey<DIM>(node.anchor, max_depth, depth_bit_width);
+    node.key = CalcMortonKey<DIM>(node.anchor, max_depth);
   }
   
   return nodes;
@@ -271,12 +284,12 @@ void tapas::hot::SortBodies(const typename BT::type *b, typename BT::type *sorte
 template <int DIM>
 tapas::KeyType tapas::hot::FindFinestAncestor(tapas::KeyType x,
                                               tapas::KeyType y,
-                                              const int max_depth,
-                                              const int depth_bit_width) {
-  int min_depth = std::min(MortonKeyGetDepth(x, depth_bit_width),
-                           MortonKeyGetDepth(y, depth_bit_width));
-  x >>= depth_bit_width;
-  y >>= depth_bit_width;
+                                              const int max_depth) {
+
+  int min_depth = std::min(MortonKeyGetDepth(x),
+                           MortonKeyGetDepth(y));
+  x >>= DEPTH_BIT_WIDTH;
+  y >>= DEPTH_BIT_WIDTH;
   KeyType a = ~(x ^ y);
   int common_depth = 0;
   for (; common_depth < min_depth; ++common_depth) {
@@ -285,18 +298,17 @@ tapas::KeyType tapas::hot::FindFinestAncestor(tapas::KeyType x,
   }
   int common_bit_len = common_depth * DIM;
   KeyType mask = ((1 << common_bit_len) - 1) << (max_depth * DIM - common_bit_len);
-  return MortonKeyAppendDepth(x & mask, common_depth, depth_bit_width);
+  return MortonKeyAppendDepth(x & mask, common_depth);
 }
 
 template <int DIM, class T>
-void tapas::hot::AppendChildren(tapas::KeyType x, T &s,
-                                const int max_depth, const int depth_bit_width) {
-  int x_depth = MortonKeyGetDepth(x, depth_bit_width);
+void tapas::hot::AppendChildren(tapas::KeyType x, T &s, const int max_depth) {
+  int x_depth = MortonKeyGetDepth(x);
   int c_depth = x_depth + 1;
   if (c_depth > max_depth) return;
-  x = MortonKeyIncrementDepth(x, 1, depth_bit_width);
+  x = MortonKeyIncrementDepth(x, 1);
   for (int i = 0; i < (1 << DIM); ++i) {
-    int child_key = (i << ((max_depth - c_depth) * DIM + depth_bit_width));
+    int child_key = (i << ((max_depth - c_depth) * DIM + DEPTH_BIT_WIDTH));
     s.push_back(x | child_key);
     std::cout << "Adding child " << (x | child_key) << std::endl;
   }
@@ -307,22 +319,20 @@ void tapas::hot::AppendChildren(tapas::KeyType x, T &s,
 // FindBodyRange method.
 template <int DIM>
 tapas::KeyType tapas::hot::CalcMortonKeyNext(const KeyType k,
-                                             const int max_depth,
-                                             const int depth_bit_width) {
-  int d = MortonKeyGetDepth(k, depth_bit_width);
-  KeyType inc = 1 << (DIM * (max_depth - d) + depth_bit_width);
+                                             const int max_depth) {
+  int d = MortonKeyGetDepth(k);
+  KeyType inc = 1 << (DIM * (max_depth - d) + DEPTH_BIT_WIDTH);
   return k + inc;
 }
 
 template <int DIM>
-tapas::KeyType tapas::hot::MortonKeyFirstChild(const KeyType k, const int max_depth,
-                                               const int depth_bit_width) {
+tapas::KeyType tapas::hot::MortonKeyFirstChild(const KeyType k, const int max_depth) {
 #ifdef TAPAS_DEBUG
-  KeyType t = MortonKeyRemoveDepth(k, depth_bit_width);
-  t = t & ~(~((KeyType)0) << (DIM * (max_depth - MortonKeyGetDepth(k, depth_bit_width))));
+  KeyType t = MortonKeyRemoveDepth(k);
+  t = t & ~(~((KeyType)0) << (DIM * (max_depth - MortonKeyGetDepth(k))));
   assert(t == 0);
 #endif  
-  return MortonKeyIncrementDepth(k, 1, depth_bit_width);
+  return MortonKeyIncrementDepth(k, 1);
 }
 
 
@@ -330,23 +340,21 @@ template <int DIM>
 void tapas::hot::CompleteRegion(tapas::KeyType x, tapas::KeyType y,
                                 tapas::KeyVector &s,
                                 const int max_depth) {
-  int depth_bit_width = CalcMinBitLen(max_depth);
-  KeyType fa = FindFinestAncestor<DIM>(x, y, max_depth, depth_bit_width);
+  KeyType fa = FindFinestAncestor<DIM>(x, y, max_depth);
   KeyList w;
-  AppendChildren<DIM>(fa, w, max_depth, depth_bit_width);
+  AppendChildren<DIM>(fa, w, max_depth);
   tapas::PrintKeys(w, std::cout);
   while (w.size() > 0) {
     KeyType k = w.front();
     w.pop_front();
     std::cout << "visiting " << k << std::endl;
-    if ((k > x && k < y) && !MortonKeyIsDescendant<DIM>(k, y, max_depth,
-                                                        depth_bit_width)) {
+    if ((k > x && k < y) && !MortonKeyIsDescendant<DIM>(k, y, max_depth)) {
       s.push_back(k);
       std::cout << "Adding " << k << " to output set" << std::endl;
-    } else if (MortonKeyIsDescendant<DIM>(k, x, max_depth, depth_bit_width) ||
-               MortonKeyIsDescendant<DIM>(k, y, max_depth, depth_bit_width)) {
+    } else if (MortonKeyIsDescendant<DIM>(k, x, max_depth) ||
+               MortonKeyIsDescendant<DIM>(k, y, max_depth)) {
       std::cout << "Adding children of " << k << " to work set" << std::endl;      
-      AppendChildren<DIM>(k, w, max_depth, depth_bit_width);
+      AppendChildren<DIM>(k, w, max_depth);
 
     }
   }
@@ -390,12 +398,11 @@ tapas::KeyPair tapas::hot::GetBodyRange(const tapas::KeyType k,
                                         const BT *b,
                                         index_t offset,
                                         index_t len,
-                                        int max_depth,
-                                        int depth_bit_width) {
+                                        int max_depth) {
   index_t body_begin = FindFirst(k, hn, offset, len);
   index_t body_num = GetBodyNumber(k, hn, b, body_begin,
                                    len-(body_begin-offset),
-                                   max_depth, depth_bit_width);
+                                   max_depth);
   return std::make_pair(body_begin, body_num);
 }
 
@@ -405,21 +412,32 @@ tapas::index_t tapas::hot::GetBodyNumber(const tapas::KeyType k,
                                          const BT *b,
                                          index_t offset,
                                          index_t len,
-                                         int max_depth,
-                                         int depth_bit_width) {
+                                         int max_depth) {
   //index_t body_begin = FindFirst(k, hn, offset, len);
-  KeyType next_key = CalcMortonKeyNext<DIM>(k, max_depth, depth_bit_width);
+  KeyType next_key = CalcMortonKeyNext<DIM>(k, max_depth);
   index_t body_end = FindFirst(next_key, hn, offset+1, len-1);
   return body_end - offset;
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
+bool tapas::hot::Cell<CELL_TEMPLATE_ARGS>::IsRoot() const {
+  return MortonKeyGetDepth(key_) == 0;
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+tapas::hot::Cell<CELL_TEMPLATE_ARGS> &tapas::hot::Cell<
+  CELL_TEMPLATE_ARGS>::parent() const {
+  return this;
+}
+  
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
 tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>::operator()(
     typename BT::type *b, index_t nb,
     const Region<DIM, FP> &r) {
-
+  typedef Cell<CELL_TEMPLATE_ARGS> CELL_T;
+  
   typename BT::type *b_work = new typename BT::type[nb];
-  //const int depth_bit_width = CalcMinBitLen(max_depth);
   HelperNode<DIM> *hn =
       CreateInitialNodes<DIM, FP, BT>(b, nb, r, max_depth_);
 
@@ -428,10 +446,12 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>:
   std::memcpy(b, b_work, sizeof(BT) * nb);
 
   KeyType root_key = 0;
-  KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb, max_depth_, depth_bit_width_);
+  KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb, max_depth_);
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
-  auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
+  typename CELL_T::HashTable ht;
+  //auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
+  auto *root = new CELL_T(r, 0, nb, root_key, ht);
   Refine(root, hn, b, 0, 0);
   
   return root;
@@ -448,26 +468,26 @@ void tapas::hot::Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
     TAPAS_LOG_DEBUG() << "Small enough cell" << std::endl;
     return;
   }
-  if (cur_depth > max_depth_) {
+  if (cur_depth >= max_depth_) {
     TAPAS_LOG_DEBUG() << "Reached maximum depth" << std::endl;
     return;
   }
-  KeyType child_key = MortonKeyFirstChild<DIM>(cur_key, max_depth_, depth_bit_width_);
+  KeyType child_key = MortonKeyFirstChild<DIM>(cur_key, max_depth_);
   index_t cur_offset = c->bid();
   index_t cur_len = c->nb();
   for (int i = 0; i < (1 << DIM); ++i) {
     TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
     index_t child_bn = GetBodyNumber(child_key, hn, b, cur_offset, cur_len,
-                                          max_depth_, depth_bit_width_);
+                                          max_depth_);
     TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
                       << child_bn << "\n";
     auto child_r = c->region().PartitionBSP(i);
     auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
-        child_r, cur_offset, child_bn, child_key);
+        child_r, cur_offset, child_bn, child_key, c->ht());
     TAPAS_LOG_DEBUG() << "Particles: \n";
     tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
     Refine(child_cell, hn, b, cur_depth+1, child_key);
-    child_key = hot::CalcMortonKeyNext<DIM>(child_key, max_depth_, depth_bit_width_);
+    child_key = hot::CalcMortonKeyNext<DIM>(child_key, max_depth_);
     cur_offset = cur_offset + child_bn;
     cur_len = cur_len - child_bn;
   }

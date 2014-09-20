@@ -12,9 +12,6 @@ class BodyInfo {
   static const int pos_offset = POS_OFFSET;
 };
 
-// Special class to indicate none 
-class NONE {};
-
 template <int DIM, class FP, class BT,
           class BT_ATTR, class CELL_ATTR,
           class PartitionAlgorithm>

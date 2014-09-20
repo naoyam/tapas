@@ -14,6 +14,9 @@ using std::ostream;
 
 typedef unsigned index_t;
 
+// Special class to indicate none 
+class NONE {};
+
 class StringJoin {
   const std::string sep;
   bool first;
