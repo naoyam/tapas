@@ -28,7 +28,6 @@ void PrintHelperNode(tapas::hot::HelperNode<DIM> *hn, int n,
 int main(int argc, char *argv[]) {
   Region r(Vec(0.0, 0.0), Vec(1.0, 1.0));
   int np = 100;
-  const int max_depth = 3;
   const int max_nb = 10;
   //const int depth_bit_width = tapas::CalcMinBitLen(max_depth);
   particle *p = GetParticles(np, r);
@@ -36,7 +35,7 @@ int main(int argc, char *argv[]) {
   PrintParticles<TEST_DIM>(p, 10, std::cout);
   tapas::hot::HelperNode<TEST_DIM> *hn =
       tapas::hot::CreateInitialNodes<TEST_DIM, real_t, BodyInfo>(
-          p, np, r, max_depth);
+          p, np, r);
   tapas::hot::SortNodes<TEST_DIM>(hn, np);
   std::cout << "Sorted nodes\n";
   PrintHelperNode(hn, 10, std::cout);
@@ -47,7 +46,7 @@ int main(int argc, char *argv[]) {
 
   TAPAS_LOG_DEBUG() << "Keys: " << hn[0].key << "->" << hn[np-1].key << endl;
   
-  Tapas::Cell *root = Tapas::Partition(max_nb, max_depth, p, np, r);
+  Tapas::Cell *root = Tapas::Partition(max_nb, p, np, r);
   
   return 0;
 }

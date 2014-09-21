@@ -13,9 +13,9 @@ template <int DIM, class FP, class BT,
 class Tapas<DIM, FP, BT, BT_ATTR, CELL_ATTR, HOT> {
  public:
   typedef tapas::hot::Cell<DIM, FP, BT, BT_ATTR> Cell;
-  static Cell *Partition(int max_nb, int max_depth,
-                         typename BT::type *b, index_t nb, const Region<DIM, FP> &r) {
-    tapas::hot::Partition<DIM, FP, BT, BT_ATTR> part(max_nb, max_depth);
+  static Cell *Partition(int max_nb,  typename BT::type *b,
+                         index_t nb, const Region<DIM, FP> &r) {
+    tapas::hot::Partition<DIM, FP, BT, BT_ATTR> part(max_nb);
     return part(b, nb, r);
   }
 };
