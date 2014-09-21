@@ -1,5 +1,5 @@
-#ifndef EXAFMM_TACO_COMMON_H_
-#define EXAFMM_TACO_COMMON_H_
+#ifndef EXAFMM_TAPAS_COMMON_H_
+#define EXAFMM_TAPAS_COMMON_H_
 
 #include "args.h"
 #include "bound_box.h"
@@ -17,7 +17,7 @@
 #include "vtk.h"
 #endif
 
-#include "taco/taco.h"
+#include "tapas.h"
 
 struct CellAttr {
   vec3 X;
@@ -26,9 +26,10 @@ struct CellAttr {
   vecP L;
 };
 
-typedef taco::Cell<3, real_t, Body, 0, kvec4, CellAttr> TacoCell;
-typedef taco::Region<3, real_t> Region;
-typedef taco::ParticleIterator<3, real_t, Body, 0, kvec4, CellAttr> TacoParticleIterator;
+typedef tapas::BodyInfo<Body, 0> BodyInfo;
+typedef tapas::Tapas<3, real_t, BodyInfo,
+                     kvec4, CellAttr, tapas::HOT> Tapas;
+typedef tapas::Region<3, real_t> Region;
 
 
-#endif // EXAFMM_TACO_COMMON_H_
+#endif // EXAFMM_TAPAS_COMMON_H_

@@ -14,12 +14,12 @@ tree: tree.o $(OBJECTS)
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS) -o $@
 
-# Test for serial FMM with TACO
-#serial_taco: serial_taco.o $(OBJECTS)
+# Test for serial FMM with TAPAS
+#serial_tapas: serial_tapas.o $(OBJECTS)
 #	$(CXX) $? $(LFLAGS) -o $@
 
-taco: serial_taco.o LaplaceP2PCPU_taco.o LaplaceSphericalCPU_taco.o
-serial_taco.o: serial_taco.cxx serial_taco_helper.cxx
+tapas: serial_tapas.o LaplaceP2PCPU_tapas.o LaplaceSphericalCPU_tapas.o
+serial_tapas.o: serial_tapas.cxx serial_tapas_helper.cxx
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)

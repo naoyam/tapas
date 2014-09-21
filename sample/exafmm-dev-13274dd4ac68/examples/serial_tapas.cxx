@@ -14,12 +14,12 @@
 #include "vtk.h"
 #endif
 
-#define TACO
+#define TAPAS
 
-#ifdef TACO
-#include "taco_common.h"
-#include "taco_kernel.h"
-#include "serial_taco_helper.cxx"
+#ifdef TAPAS
+#include "tapas_common.h"
+#include "tapas_kernel.h"
+#include "serial_tapas_helper.cxx"
 #endif
 
 int main(int argc, char ** argv) {
@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
-#ifdef TACO  
+#ifdef TAPAS  
 Region tr;
 #endif  
 
@@ -63,23 +63,22 @@ Region tr;
     logger::startPAPI();
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
-#ifdef TACO    
+#ifdef TAPAS    
     asn(tr, bounds);
 #endif    
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
-#ifndef TACO
+#ifndef TAPAS
     cells = buildTree.buildTree(bodies, bounds);
     upDownPass.upwardPass(cells);    
 #else    
-    TacoCell *root = taco::PartitionBSP<
-      3, real_t, Body, 0, kvec4, CellAttr>(
-          bodies.data(), args.numBodies, tr, args.ncrit);
-    taco::Map(FMM_P2M, *root, args.theta);
+    Tapas::Cell *root = Tapas::Partition(
+        bodies.data(), args.numBodies, tr, args.ncrit);
+    tapas::Map(FMM_P2M, *root, args.theta);
 #endif
 
-#ifndef TACO    
+#ifndef TAPAS    
 #if IneJ
     jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
@@ -89,17 +88,17 @@ Region tr;
     jbodies = bodies;
 #endif
 #else
-    //taco::Map<3, real_t, Body, 0, kvec4, CellAttr, TacoCell, TacoCell, bool, int>(FMM_M2L, taco::Product(*root, *root), args.mutual, args.nspawn);
-    //taco::Map(FMM_M2L, taco::Product(*root, *root), args.mutual,
+    //tapas::Map<3, real_t, Body, 0, kvec4, CellAttr, TapasCell, TapasCell, bool, int>(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
+    //tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual,
     //args.nspawn);
-    taco::Map(FMM_M2L, taco::Product(*root, *root), args.mutual, args.nspawn);
+    tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
     jbodies = bodies;
 #endif    
 
-#ifndef TACO    
+#ifndef TAPAS    
     upDownPass.downwardPass(cells);
 #else
-    taco::Map(FMM_L2P, *root);
+    tapas::Map(FMM_L2P, *root);
 #endif    
     
     logger::printTitle("Total runtime");
