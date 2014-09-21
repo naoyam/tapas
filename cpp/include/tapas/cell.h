@@ -6,7 +6,7 @@
 #include "tapas/basic_types.h"
 
 #define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=float
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
 #define CELL_TEMPLATE_PARAMS_NO_DEF \
   int DIM, class FP, class BT, class BT_ATTR, class ATTR
 #define CELL_TEMPLATE_ARGS \
