@@ -15,15 +15,6 @@
 
 namespace tapas {
 
-template <CELL_TEMPLATE_PARAMS, class T1, class T2, class... Args>
-void Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Cell<CELL_TEMPLATE_ARGS>&, Args...),
-         ProductIterator<T1, T2> prod, Args...args) {
-  for (unsigned i = 0; i < prod.size(); ++i) {
-    f(prod.first(), prod.second(), args...);
-    ++prod;
-  }
-}
-
 template <class CellType, class T1, class T2, class... Args>
 void Map(void (*f)(CellType &, CellType &, Args...),
          ProductIterator<T1, T2> prod, Args...args) {
@@ -33,8 +24,8 @@ void Map(void (*f)(CellType &, CellType &, Args...),
   }
 }
 
-template <CELL_TEMPLATE_PARAMS, class T, class... Args>
-void Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Args...), T iter, Args...args) {
+template <class CELL, class T, class... Args>
+void Map(void (*f)(CELL&, Args...), T iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
     ++iter;

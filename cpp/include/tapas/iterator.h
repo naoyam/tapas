@@ -43,7 +43,7 @@ class BodyIterator {
     return &(c_.body(idx_));
   }
   BT_ATTR &attr() const {
-    return c_.attr(idx_);
+    return c_.body_attr(idx_);
   }
   CellType &cell() {
     return c_;

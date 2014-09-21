@@ -156,7 +156,6 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   const Cell &operator++() const {
     return *this;
   }
-
   
   KeyType key() const { return key_; }
 
@@ -181,7 +180,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   SubCellIterator<DIM, Cell> subcells() const;
   
  protected:
-  BT_ATTR &attr(index_t idx) const;
+  BT_ATTR &body_attr(index_t idx) const;
   HashTable &ht() { return ht_; }
   Cell *Lookup(KeyType k) const;
   typename BT::type *bodies_;
@@ -523,7 +522,7 @@ BT_ATTR *Cell<CELL_TEMPLATE_ARGS>::body_attrs() const {
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::attr(index_t idx) const {
+BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::body_attr(index_t idx) const {
   return body_attrs_[this->bid_+idx];
 }
 
