@@ -141,7 +141,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
 
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
        KeyType key, HashTable &ht,
-       BT *bodies, BT_ATTR *body_attrs):
+       typename BT::type *bodies, BT_ATTR *body_attrs):
       tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
       ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
       is_leaf_(true) {}
@@ -153,26 +153,26 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   int nsubcells() const;
   Cell &subcell(int idx);
   Cell &parent() const;
-  // deprecated
+#ifdef DEPRECATED
   typename BT::type &particle(index_t idx) const {
     return body(idx);
   }
+#endif
   typename BT::type &body(index_t idx) const;
-  // deprecated
+#ifdef DEPRECATED
   BT_ATTR *particle_attrs() const {
     return body_attrs();
   }
+#endif
   BT_ATTR *body_attrs() const;
-  // TODO
-  BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
   
  protected:
   BT_ATTR &attr(index_t idx) const;
   HashTable &ht() { return ht_; }
   Cell *Lookup(KeyType k);
-  bool is_leaf_;
-  BT *bodies_;
+  typename BT::type *bodies_;
   BT_ATTR *body_attrs_;
+  bool is_leaf_;  
 }; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>    
@@ -565,7 +565,8 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
                       << child_bn << "\n";
     auto child_r = c->region().PartitionBSP(i);
     auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
-        child_r, cur_offset, child_bn, child_key, c->ht());
+        child_r, cur_offset, child_bn, child_key, c->ht(),
+        c->bodies_, c->body_attrs_);
     TAPAS_LOG_DEBUG() << "Particles: \n";
     tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
     Refine(child_cell, hn, b, cur_depth+1, child_key);

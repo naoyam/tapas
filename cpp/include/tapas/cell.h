@@ -59,6 +59,7 @@ class Cell {
   }
 
   SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
+  BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
 
   // Cell attributes
   ATTR &attr() {
@@ -76,7 +77,6 @@ class Cell {
   Cell &parent() const;
   typename BT::type &body(index_t idx) const;
   BT_ATTR *body_attrs() const;
-  BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
   
  protected:
   BT_ATTR &attr(index_t idx) const;
@@ -233,13 +233,19 @@ ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> > Product(
   return ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> >(c1, c2);
 }
 
-} // namespace tapas
-
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-tapas::SubCellIterator<CELL_TEMPLATE_ARGS> tapas::Cell<CELL_TEMPLATE_ARGS>::
+SubCellIterator<CELL_TEMPLATE_ARGS> Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
   return SubCellIterator<CELL_TEMPLATE_ARGS>(*this);
 }
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+BodyIterator<CELL_TEMPLATE_ARGS> Cell<CELL_TEMPLATE_ARGS>::
+bodies() const {
+  return BodyIterator<CELL_TEMPLATE_ARGS>(*this);
+}
+
+} // namespace tapas
 
 #undef CELL_TEMPLATE_PARAMS
 #undef CELL_TEMPLATE_PARAMS_NO_DEF
