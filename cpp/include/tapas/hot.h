@@ -133,11 +133,12 @@ class Partition;
 template <CELL_TEMPLATE_PARAMS>
 class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   friend class Partition<CELL_TEMPLATE_ARGS>;
+  friend class BodyIterator<DIM, BT, BT_ATTR, Cell>;
  public:
-  typedef unordered_map<KeyType, Cell> HashTable;
+  typedef unordered_map<KeyType, Cell*> HashTable;
  protected:
   KeyType key_;
-  HashTable &ht_;
+  HashTable ht_;
  public:
 
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
@@ -162,7 +163,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   bool IsRoot() const;
   bool IsLeaf() const;
   int nsubcells() const;
-  Cell &subcell(int idx);
+  Cell &subcell(int idx) const;
   Cell &parent() const;
 #ifdef DEPRECATED
   typename BT::type &particle(index_t idx) const {
@@ -170,6 +171,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   }
 #endif
   typename BT::type &body(index_t idx) const;
+  BodyIterator<DIM, BT, BT_ATTR, Cell> bodies() const;
 #ifdef DEPRECATED
   BT_ATTR *particle_attrs() const {
     return body_attrs();
@@ -181,7 +183,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
  protected:
   BT_ATTR &attr(index_t idx) const;
   HashTable &ht() { return ht_; }
-  Cell *Lookup(KeyType k);
+  Cell *Lookup(KeyType k) const;
   typename BT::type *bodies_;
   BT_ATTR *body_attrs_;
   bool is_leaf_;  
@@ -477,7 +479,7 @@ int Cell<CELL_TEMPLATE_ARGS>::nsubcells() const {
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) {
+Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) const {
   KeyType k = MortonKeyChild<DIM>(key_, idx);
   return *Lookup(k);
 }
@@ -485,10 +487,10 @@ Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 Cell<CELL_TEMPLATE_ARGS> *Cell<CELL_TEMPLATE_ARGS>::Lookup(
-    KeyType k) {
+    KeyType k) const {
   auto i = ht_.find(k);
   if (i != ht_.end()) {
-    return *i;
+    return i->second;
   } else {
     return NULL;
   }
@@ -533,6 +535,12 @@ subcells() const {
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
+BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+bodies() const {
+  return BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> >(*this);
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
 Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
     typename BT::type *b, index_t nb,
     const Region<DIM, FP> &r) {
@@ -550,9 +558,10 @@ Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
   KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb);
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
-  typename CELL_T::HashTable ht;
+  typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
   //auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
-  auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
+  auto *root = new CELL_T(r, 0, nb, root_key, *ht, b, attrs);
+  ht->insert(std::make_pair(root_key, root));
   Refine(root, hn, b, 0, 0);
   
   return root;
@@ -586,6 +595,7 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
     auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
         child_r, cur_offset, child_bn, child_key, c->ht(),
         c->bodies_, c->body_attrs_);
+    c->ht().insert(std::make_pair(child_key, child_cell));
     TAPAS_LOG_DEBUG() << "Particles: \n";
     tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
     Refine(child_cell, hn, b, cur_depth+1, child_key);
