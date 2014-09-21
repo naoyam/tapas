@@ -146,6 +146,16 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
       tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
       ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
       is_leaf_(true) {}
+
+  typedef Cell value_type;
+  typedef ATTR attr_type;
+  Cell &operator*() {
+    return *this;
+  }
+  const Cell &operator++() const {
+    return *this;
+  }
+
   
   KeyType key() const { return key_; }
 
@@ -166,6 +176,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   }
 #endif
   BT_ATTR *body_attrs() const;
+  SubCellIterator<DIM, Cell> subcells() const;
   
  protected:
   BT_ATTR &attr(index_t idx) const;
@@ -513,6 +524,13 @@ template <CELL_TEMPLATE_PARAMS_NO_DEF>
 BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::attr(index_t idx) const {
   return body_attrs_[this->bid_+idx];
 }
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+SubCellIterator<DIM, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+subcells() const {
+  return SubCellIterator<DIM, Cell>(*this);
+}
+
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(

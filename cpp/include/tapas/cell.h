@@ -17,8 +17,13 @@ namespace tapas {
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class BodyIterator;
 
+#if 0
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class SubCellIterator;
+#else
+template <int DIM, class CELL>
+class SubCellIterator;
+#endif
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
@@ -59,7 +64,7 @@ class Cell {
     return *this;
   }
 
-  SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
+  //SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
   BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
 
   // Cell attributes
@@ -86,10 +91,10 @@ class Cell {
 
 template <CELL_TEMPLATE_PARAMS>
 class BodyIterator {
-  Cell<CELL_TEMPLATE_ARGS> &c_;
+  const Cell<CELL_TEMPLATE_ARGS> &c_;
   index_t idx_;
  public:
-  BodyIterator(Cell<CELL_TEMPLATE_ARGS> &c)
+  BodyIterator(const Cell<CELL_TEMPLATE_ARGS> &c)
       : c_(c), idx_(0) {}
 #if 0  
   typedef BT::type value_type;
@@ -134,6 +139,7 @@ class BodyIterator {
   bool operator==(const T &x) const { return false; }
 };
 
+#if 0
 template <CELL_TEMPLATE_PARAMS>
 class SubCellIterator {
   const Cell<CELL_TEMPLATE_ARGS> &c_;
@@ -161,6 +167,35 @@ class SubCellIterator {
   template <class T>
   bool operator==(const T &x) const { return false; }
 }; // class SubCellIterator
+#else
+template <int DIM, class CELL>
+class SubCellIterator {
+  const CELL &c_;
+  int idx_;
+ public:
+  typedef CELL value_type;
+  typedef typename CELL::attr_type attr_type;  
+  SubCellIterator(const CELL &c): c_(c), idx_(0) {}
+  unsigned size() const {
+    if (c_.IsLeaf()) {
+      return 0;
+    } else {
+      return 1 << DIM;
+    }
+  }
+  CELL &operator*() const {
+    return c_.subcell(idx_);
+  }
+  CELL &operator++() {
+    return c_.subcell(++idx_);
+  }
+  bool operator==(const SubCellIterator &x) const {
+    return c_ == x.c_;
+  }
+  template <class T>
+  bool operator==(const T &x) const { return false; }
+}; // class SubCellIterator
+#endif
 
 template <class T1, class T2>
 class ProductIterator {
@@ -234,11 +269,13 @@ ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> > Product(
   return ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> >(c1, c2);
 }
 
+#if 0
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 SubCellIterator<CELL_TEMPLATE_ARGS> Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
   return SubCellIterator<CELL_TEMPLATE_ARGS>(*this);
 }
+#endif
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 BodyIterator<CELL_TEMPLATE_ARGS> Cell<CELL_TEMPLATE_ARGS>::
