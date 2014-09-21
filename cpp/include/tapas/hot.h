@@ -517,12 +517,15 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>:
   return root;
 }
 
+namespace tapas {
+namespace hot {
+
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-void tapas::hot::Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
-                                                       const HelperNode<DIM> *hn,
-                                                       const typename BT::type *b,
-                                                       int cur_depth,
-                                                       KeyType cur_key) const {
+void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
+                                           const HelperNode<DIM> *hn,
+                                           const typename BT::type *b,
+                                           int cur_depth,
+                                           KeyType cur_key) const {
   TAPAS_LOG_DEBUG() << "Current depth: " << cur_depth << std::endl;
   if (c->nb() <= max_nb_) {
     TAPAS_LOG_DEBUG() << "Small enough cell" << std::endl;
@@ -552,7 +555,8 @@ void tapas::hot::Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
   }
   c->is_leaf_ = false;
 }
-
+}
+}
 
 #undef CELL_TEMPLATE_PARAMS
 #undef CELL_TEMPLATE_PARAMS_NO_DEF
