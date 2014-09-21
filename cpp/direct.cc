@@ -38,7 +38,7 @@ static void direct(const particle &p1, particle &a1,
 // only c1 and c2 can be modified
 static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
-    tapas::Map(direct, tapas::Product(c1.particles(), c2.particles()));
+    tapas::Map(direct, tapas::Product(c1.bodies(), c2.bodies()));
   } else if (c1.IsLeaf()) {
     tapas::Map(interact, tapas::Product(c1, c2.subcells()));
   } else if (c2.IsLeaf()) {
@@ -69,7 +69,7 @@ static void direct(ParticleIterator &p1, ParticleIterator &p2) {
 // only c1 and c2 can be modified
 static void interact(Cell &c1, Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
-    tapas::Map(direct, tapas::Product(c1.particles(), c2.particles()));
+    tapas::Map(direct, tapas::Product(c1.bodies(), c2.bodies()));
   } else if (c1.IsLeaf()) {
     tapas::Map(interact, tapas::Product(c1, c2.subcells()));
   } else if (c2.IsLeaf()) {
@@ -88,5 +88,5 @@ particle *calc_direct(struct particle *p, size_t np, int s) {
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
   Cell *root = tapas::PartitionBSP<DIM, real_t, particle, 0, particle>(p, np, r, s);
   tapas::Map(interact, tapas::Product(*root, *root));
-  return root->particle_attrs();
+  return root->boddy_attrs();
 }

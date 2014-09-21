@@ -15,14 +15,14 @@
 namespace tapas {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-class ParticleIterator;
+class BodyIterator;
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class SubCellIterator;
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
-  friend class ParticleIterator<CELL_TEMPLATE_ARGS>;
+  friend class BodyIterator<CELL_TEMPLATE_ARGS>;
 #if 0  
   BT_ATTR *dummy_;
   BT::type *BT_dummy_;
@@ -59,7 +59,6 @@ class Cell {
   }
 
   SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
-  ParticleIterator<CELL_TEMPLATE_ARGS> particles() const;
 
   // Cell attributes
   ATTR &attr() {
@@ -75,8 +74,9 @@ class Cell {
   int nsubcells() const;
   Cell &subcell(int idx) const; 
   Cell &parent() const;
-  typename BT::type &particle(index_t idx) const;
-  BT_ATTR *particle_attrs() const;
+  typename BT::type &body(index_t idx) const;
+  BT_ATTR *body_attrs() const;
+  BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
   
  protected:
   BT_ATTR &attr(index_t idx) const;
@@ -84,16 +84,16 @@ class Cell {
 }; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>
-class ParticleIterator {
+class BodyIterator {
   Cell<CELL_TEMPLATE_ARGS> &c_;
   index_t idx_;
  public:
-  ParticleIterator(Cell<CELL_TEMPLATE_ARGS> &c)
+  BodyIterator(Cell<CELL_TEMPLATE_ARGS> &c)
       : c_(c), idx_(0) {}
 #if 0  
   typedef BT::type value_type;
 #else  
-  typedef ParticleIterator value_type;
+  typedef BodyIterator value_type;
 #endif  
   typedef BT_ATTR attr_type;  
   index_t size() const {
@@ -101,18 +101,18 @@ class ParticleIterator {
   }
 #if 0
   BT::type &&operator*() const {
-    return c_.particle(idx_);
+    return c_.body(idx_);
   }
 #else
-  const ParticleIterator &operator*() const {
+  const BodyIterator &operator*() const {
     return *this;
   }
-  ParticleIterator &operator*() {
+  BodyIterator &operator*() {
     return *this;
   }
 #endif    
   typename BT::type *operator->() const {
-    return &(c_.particle(idx_));
+    return &(c_.body(idx_));
   }
   BT_ATTR &attr() const {
     return c_.attr(idx_);
@@ -124,9 +124,9 @@ class ParticleIterator {
     return c_;
   }
   typename BT::type &operator++() {
-    return c_.particle(++idx_);
+    return c_.body(++idx_);
   }
-  bool operator==(const ParticleIterator &x) const {
+  bool operator==(const BodyIterator &x) const {
     return c_ == x.c_ && idx_ == x.idx_;
   }
   template <class T>

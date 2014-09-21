@@ -102,7 +102,7 @@ void SortNodes(HelperNode<DIM> *nodes, index_t n);
 
 template <int DIM, class BT>
 void SortBodies(const typename BT::type *b, typename BT::type *sorted,
-                const tapas::hot::HelperNode<DIM> *nodes,
+                const HelperNode<DIM> *nodes,
                 tapas::index_t nb);
 
 template <int DIM>
@@ -131,7 +131,7 @@ class Partition;
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
-  friend class tapas::hot::Partition<CELL_TEMPLATE_ARGS>;
+  friend class Partition<CELL_TEMPLATE_ARGS>;
  public:
   typedef unordered_map<KeyType, Cell> HashTable;
  protected:
@@ -140,9 +140,11 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
  public:
 
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
-       KeyType key, HashTable &ht):
+       KeyType key, HashTable &ht,
+       BT *bodies, BT_ATTR *body_attrs):
       tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
-      ht_(ht), is_leaf_(true) {}
+      ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
+      is_leaf_(true) {}
   
   KeyType key() const { return key_; }
 
@@ -151,18 +153,27 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   int nsubcells() const;
   Cell &subcell(int idx);
   Cell &parent() const;
+  // deprecated
+  typename BT::type &particle(index_t idx) const {
+    return body(idx);
+  }
+  typename BT::type &body(index_t idx) const;
+  // deprecated
+  BT_ATTR *particle_attrs() const {
+    return body_attrs();
+  }
+  BT_ATTR *body_attrs() const;
   // TODO
-  typename BT::type &particle(index_t idx) const;
-  // TODO
-  BT_ATTR *particle_attrs() const;
+  BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
   
  protected:
-  // TODO
   BT_ATTR &attr(index_t idx) const;
   HashTable &ht() { return ht_; }
   Cell *Lookup(KeyType k);
   bool is_leaf_;
-};
+  BT *bodies_;
+  BT_ATTR *body_attrs_;
+}; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>    
 class Partition {
@@ -181,27 +192,25 @@ class Partition {
   
 }; // class PartitionHOT
 
-} // namespace hot
-} // namespace tapas
 
 inline
-tapas::KeyType tapas::hot::MortonKeyAppendDepth(tapas::KeyType k, int depth) {
+tapas::KeyType MortonKeyAppendDepth(tapas::KeyType k, int depth) {
   k = (k << DEPTH_BIT_WIDTH) | depth;
   return k;
 }
 
 inline
-int tapas::hot::MortonKeyGetDepth(tapas::KeyType k) {
+int MortonKeyGetDepth(tapas::KeyType k) {
   return k & ((1 << DEPTH_BIT_WIDTH) - 1);
 }
 
 inline
-tapas::KeyType tapas::hot::MortonKeyRemoveDepth(tapas::KeyType k) {
+tapas::KeyType MortonKeyRemoveDepth(tapas::KeyType k) {
   return k >> DEPTH_BIT_WIDTH;
 }
 
 inline
-int tapas::hot::MortonKeyIncrementDepth(tapas::KeyType k, int inc) {
+int MortonKeyIncrementDepth(tapas::KeyType k, int inc) {
   int depth = MortonKeyGetDepth(k);
   depth += inc;
 #ifdef TAPAS_DEBUG
@@ -215,7 +224,7 @@ int tapas::hot::MortonKeyIncrementDepth(tapas::KeyType k, int inc) {
 }
 
 template <int DIM>
-bool tapas::hot::MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc) {
+bool MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc) {
   int depth = MortonKeyGetDepth(asc);
   if (depth >= MortonKeyGetDepth(dsc)) return false;
   int s = (MAX_DEPTH - depth) * DIM + DEPTH_BIT_WIDTH;
@@ -226,7 +235,7 @@ bool tapas::hot::MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc) {
 
 
 template <int DIM>
-tapas::KeyType tapas::hot::CalcFinestMortonKey(const tapas::Vec<DIM, int> &anchor) {
+tapas::KeyType CalcFinestMortonKey(const tapas::Vec<DIM, int> &anchor) {
   KeyType k = 0;
   int mask = 1 << (MAX_DEPTH - 1);
   for (int i = 0; i < MAX_DEPTH; ++i) {
@@ -239,7 +248,7 @@ tapas::KeyType tapas::hot::CalcFinestMortonKey(const tapas::Vec<DIM, int> &ancho
 }
 
 template <int DIM, class FP, class BT>
-tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
+HelperNode<DIM> *CreateInitialNodes(
     const typename BT::type *p, index_t np,
     const Region<DIM, FP> &r) {
   HelperNode<DIM> *nodes = new HelperNode<DIM>[np];
@@ -270,7 +279,7 @@ tapas::hot::HelperNode<DIM> *tapas::hot::CreateInitialNodes(
 }
 
 template <int DIM>
-void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, index_t n) {
+void SortNodes(HelperNode<DIM> *nodes, index_t n) {
   std::qsort(nodes, n, sizeof(HelperNode<DIM>),
              [] (const void *x, const void *y) {
                return static_cast<const HelperNode<DIM>*>(x)->key -
@@ -279,8 +288,8 @@ void tapas::hot::SortNodes(tapas::hot::HelperNode<DIM> *nodes, index_t n) {
 }
 
 template <int DIM, class BT>
-void tapas::hot::SortBodies(const typename BT::type *b, typename BT::type *sorted,
-                            const tapas::hot::HelperNode<DIM> *sorted_nodes,
+void SortBodies(const typename BT::type *b, typename BT::type *sorted,
+                            const HelperNode<DIM> *sorted_nodes,
                             tapas::index_t nb) {
   for (index_t i = 0; i < nb; ++i) {
     sorted[i] = b[sorted_nodes[i].p_index];
@@ -288,7 +297,7 @@ void tapas::hot::SortBodies(const typename BT::type *b, typename BT::type *sorte
 }
 
 template <int DIM>
-tapas::KeyType tapas::hot::FindFinestAncestor(tapas::KeyType x,
+tapas::KeyType FindFinestAncestor(tapas::KeyType x,
                                               tapas::KeyType y) {
   int min_depth = std::min(MortonKeyGetDepth(x),
                            MortonKeyGetDepth(y));
@@ -306,7 +315,7 @@ tapas::KeyType tapas::hot::FindFinestAncestor(tapas::KeyType x,
 }
 
 template <int DIM, class T>
-void tapas::hot::AppendChildren(tapas::KeyType x, T &s) {
+void AppendChildren(tapas::KeyType x, T &s) {
   int x_depth = MortonKeyGetDepth(x);
   int c_depth = x_depth + 1;
   if (c_depth > MAX_DEPTH) return;
@@ -322,21 +331,21 @@ void tapas::hot::AppendChildren(tapas::KeyType x, T &s) {
 // key overflows the overall region, but should be fine for
 // FindBodyRange method.
 template <int DIM>
-tapas::KeyType tapas::hot::CalcMortonKeyNext(KeyType k) {
+tapas::KeyType CalcMortonKeyNext(KeyType k) {
   int d = MortonKeyGetDepth(k);
   KeyType inc = 1 << (DIM * (MAX_DEPTH - d) + DEPTH_BIT_WIDTH);
   return k + inc;
 }
 
 template <int DIM>
-tapas::KeyType tapas::hot::MortonKeyClearDescendants(KeyType k) {
+tapas::KeyType MortonKeyClearDescendants(KeyType k) {
   int d = MortonKeyGetDepth(k);
   KeyType m = ~(((1 << ((MAX_DEPTH - d) * DIM)) - 1) << DEPTH_BIT_WIDTH);
   return k & m;
 }
 
 template <int DIM>
-tapas::KeyType tapas::hot::MortonKeyParent(KeyType k) {
+tapas::KeyType MortonKeyParent(KeyType k) {
   int d = MortonKeyGetDepth(k);  
   if (d == 0) return k;
   k = MortonKeyIncrementDepth(k, -1);
@@ -345,7 +354,7 @@ tapas::KeyType tapas::hot::MortonKeyParent(KeyType k) {
 
 
 template <int DIM>
-tapas::KeyType tapas::hot::MortonKeyFirstChild(KeyType k) {
+tapas::KeyType MortonKeyFirstChild(KeyType k) {
 #ifdef TAPAS_DEBUG
   KeyType t = MortonKeyRemoveDepth(k);
   t = t & ~(~((KeyType)0) << (DIM * (MAX_DEPTH - MortonKeyGetDepth(k))));
@@ -355,7 +364,7 @@ tapas::KeyType tapas::hot::MortonKeyFirstChild(KeyType k) {
 }
 
 template <int DIM>
-tapas::KeyType tapas::hot::MortonKeyChild(KeyType k, int child_idx) {
+tapas::KeyType MortonKeyChild(KeyType k, int child_idx) {
   TAPAS_ASSERT(child_idx < (1 << DIM));
   k = MortonKeyIncrementDepth(k, 1);
   int d = MortonKeyGetDepth(k);
@@ -363,7 +372,7 @@ tapas::KeyType tapas::hot::MortonKeyChild(KeyType k, int child_idx) {
 }
 
 template <int DIM>
-void tapas::hot::CompleteRegion(tapas::KeyType x, tapas::KeyType y,
+void CompleteRegion(tapas::KeyType x, tapas::KeyType y,
                                 tapas::KeyVector &s) {
   KeyType fa = FindFinestAncestor<DIM>(x, y);
   KeyList w;
@@ -387,7 +396,7 @@ void tapas::hot::CompleteRegion(tapas::KeyType x, tapas::KeyType y,
 }
 
 template <int DIM>
-tapas::index_t tapas::hot::FindFirst(const KeyType k,
+tapas::index_t FindFirst(const KeyType k,
                                      const HelperNode<DIM> *hn,
                                      const index_t offset,
                                      const index_t len) {
@@ -414,12 +423,11 @@ tapas::index_t tapas::hot::FindFirst(const KeyType k,
   return cur;
 }
 
-
 // Returns the range of bodies that are included in the cell specified
 // by the given key. 
 template <int DIM, class BT>
-tapas::KeyPair tapas::hot::GetBodyRange(const tapas::KeyType k,
-                                        const tapas::hot::HelperNode<DIM> *hn,
+tapas::KeyPair GetBodyRange(const tapas::KeyType k,
+                                        const HelperNode<DIM> *hn,
                                         const BT *b, index_t offset,
                                         index_t len) {
   index_t body_begin = FindFirst(k, hn, offset, len);
@@ -429,8 +437,8 @@ tapas::KeyPair tapas::hot::GetBodyRange(const tapas::KeyType k,
 }
 
 template <int DIM, class BT>
-tapas::index_t tapas::hot::GetBodyNumber(const tapas::KeyType k,
-                                         const tapas::hot::HelperNode<DIM> *hn,
+tapas::index_t GetBodyNumber(const tapas::KeyType k,
+                                         const HelperNode<DIM> *hn,
                                          const BT *b,
                                          index_t offset,
                                          index_t len) {
@@ -441,30 +449,30 @@ tapas::index_t tapas::hot::GetBodyNumber(const tapas::KeyType k,
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-bool tapas::hot::Cell<CELL_TEMPLATE_ARGS>::IsRoot() const {
+bool Cell<CELL_TEMPLATE_ARGS>::IsRoot() const {
   return MortonKeyGetDepth(key_) == 0;
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-bool tapas::hot::Cell<CELL_TEMPLATE_ARGS>::IsLeaf() const {
+bool Cell<CELL_TEMPLATE_ARGS>::IsLeaf() const {
   return is_leaf_;
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-int tapas::hot::Cell<CELL_TEMPLATE_ARGS>::nsubcells() const {
+int Cell<CELL_TEMPLATE_ARGS>::nsubcells() const {
   if (IsLeaf()) return 0;
   else return (1 << DIM);
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-tapas::hot::Cell<CELL_TEMPLATE_ARGS> &tapas::hot::Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) {
+Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) {
   KeyType k = MortonKeyChild(key_, idx);
   return *Lookup(k);
 }
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Cell<CELL_TEMPLATE_ARGS>::Lookup(
+Cell<CELL_TEMPLATE_ARGS> *Cell<CELL_TEMPLATE_ARGS>::Lookup(
     KeyType k) {
   auto i = ht_.find(k);
   if (i != ht_.end()) {
@@ -475,8 +483,7 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Cell<CELL_TEMPLATE_ARGS>::Look
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-tapas::hot::Cell<CELL_TEMPLATE_ARGS> &tapas::hot::Cell<
-  CELL_TEMPLATE_ARGS>::parent() const {
+Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::parent() const {
   if (IsRoot()) {
     TAPAS_LOG_ERROR() << "Trying to access parent of the root cell." << std::endl;
     TAPAS_DIE();
@@ -490,10 +497,24 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> &tapas::hot::Cell<
   }
   return *c;
 }
-  
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>::operator()(
+typename BT::type &Cell<CELL_TEMPLATE_ARGS>::body(index_t idx) const {
+  return bodies_[idx];
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+BT_ATTR *Cell<CELL_TEMPLATE_ARGS>::body_attrs() const {
+  return body_attrs_;
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::attr(index_t idx) const {
+  return body_attrs_[idx];
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
     typename BT::type *b, index_t nb,
     const Region<DIM, FP> &r) {
   typedef Cell<CELL_TEMPLATE_ARGS> CELL_T;
@@ -504,6 +525,7 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>:
   SortNodes<DIM>(hn, nb);
   SortBodies<DIM, BT>(b, b_work, hn, nb);
   std::memcpy(b, b_work, sizeof(BT) * nb);
+  BT_ATTR *attrs = new BT_ATTR[nb];
 
   KeyType root_key = 0;
   KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb);
@@ -511,14 +533,12 @@ tapas::hot::Cell<CELL_TEMPLATE_ARGS> *tapas::hot::Partition<CELL_TEMPLATE_ARGS>:
 
   typename CELL_T::HashTable ht;
   //auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
-  auto *root = new CELL_T(r, 0, nb, root_key, ht);
+  auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
   Refine(root, hn, b, 0, 0);
   
   return root;
 }
 
-namespace tapas {
-namespace hot {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
@@ -555,8 +575,10 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
   }
   c->is_leaf_ = false;
 }
-}
-}
+
+
+} // namespace hot
+} // namespace tapas
 
 #undef CELL_TEMPLATE_PARAMS
 #undef CELL_TEMPLATE_PARAMS_NO_DEF
