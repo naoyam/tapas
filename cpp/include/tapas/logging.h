@@ -41,10 +41,9 @@ class Logger {
       : os_(os), enabled_(true), level_(level) {}
 
   void LogHeader(const string& error_level, const char *file,
-                 const char *func, int line, int offset) const {
+                 const char *func, int line) const {
     if (enabled_) {
       os_ << "[" << error_level << ": ";
-      //for (int i = 0; i < offset; ++i) os_ << " ";
       os_ << func << "@"
           << file_path_basename(file) << "#" << line << "] ";
     }
