@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <sstream>
 #include <cassert>
+#include <iostream>
 
 #define TAPAS_DEBUG
 

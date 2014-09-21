@@ -4,6 +4,7 @@
 #include "tapas/stdcbug.h"
 
 #include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <list>
 #include <vector>
@@ -178,10 +179,10 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
 template <CELL_TEMPLATE_PARAMS>    
 class Partition {
  private:
-  const int max_nb_;
+  const unsigned max_nb_;
   
  public:
-  Partition(int max_nb): max_nb_(max_nb) {}
+  Partition(unsigned max_nb): max_nb_(max_nb) {}
       
   Cell<CELL_TEMPLATE_ARGS> *operator()(typename BT::type *b, index_t nb,
                                        const Region<DIM, FP> &r);
@@ -466,7 +467,7 @@ int Cell<CELL_TEMPLATE_ARGS>::nsubcells() const {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) {
-  KeyType k = MortonKeyChild(key_, idx);
+  KeyType k = MortonKeyChild<DIM>(key_, idx);
   return *Lookup(k);
 }
 
@@ -488,7 +489,7 @@ Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::parent() const {
     TAPAS_LOG_ERROR() << "Trying to access parent of the root cell." << std::endl;
     TAPAS_DIE();
   }
-  KeyType *parent_key = MortonKeyParent(key_);
+  KeyType *parent_key = MortonKeyParent<DIM>(key_);
   auto *c = Lookup(parent_key);
   if (c == NULL) {
     TAPAS_LOG_ERROR() << "Parent (" << parent_key << ") of cell (" << key_ << ") not found."
@@ -500,7 +501,7 @@ Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::parent() const {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 typename BT::type &Cell<CELL_TEMPLATE_ARGS>::body(index_t idx) const {
-  return bodies_[idx];
+  return bodies_[this->bid_+idx];
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
@@ -510,7 +511,7 @@ BT_ATTR *Cell<CELL_TEMPLATE_ARGS>::body_attrs() const {
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::attr(index_t idx) const {
-  return body_attrs_[idx];
+  return body_attrs_[this->bid_+idx];
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>

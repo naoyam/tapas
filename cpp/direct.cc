@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cmath>
 
-#include "tapas/tapas.h"
+#include "tapas.h"
 
 #define DIM (3)
 typedef double real_t;
@@ -13,8 +13,9 @@ struct particle {
   real_t X[4];
 };
 
-typedef tapas::Cell<DIM, real_t, particle, 0, particle> Cell;
-typedef tapas::ParticleIterator<DIM, real_t, particle, 0, particle> ParticleIterator;
+typedef tapas::BodyInfo<particle, 0> BodyInfo;
+typedef tapas::Tapas<DIM, real_t, BodyInfo,
+                     particle, tapas::NONE, tapas::HOT> Tapas;
 
 #if 0
 static void direct(const particle &p1, particle &a1,
@@ -49,7 +50,7 @@ static void interact(Cell &c1, Cell &c2) {
 }
 
 #else
-static void direct(ParticleIterator &p1, ParticleIterator &p2) {
+static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2) {
   const float eps2 = 1e-6;
   real_t dx = p1->X[0] - p2->X[0];
   real_t dy = p1->X[1] - p2->X[1];
@@ -67,7 +68,7 @@ static void direct(ParticleIterator &p1, ParticleIterator &p2) {
   p2.attr().X[3] += p1->X[3] * invR;
 }
 // only c1 and c2 can be modified
-static void interact(Cell &c1, Cell &c2) {
+static void interact(Tapas::Cell &c1, Tapas::Cell &c2) {
   if (c1.IsLeaf() && c2.IsLeaf()) {
     tapas::Map(direct, tapas::Product(c1.bodies(), c2.bodies()));
   } else if (c1.IsLeaf()) {
@@ -86,7 +87,7 @@ particle *calc_direct(struct particle *p, size_t np, int s) {
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
   Region r(Vec(0.0, 0.0, 0.0), Vec(1.0, 1.0, 1.0));
-  Cell *root = tapas::PartitionBSP<DIM, real_t, particle, 0, particle>(p, np, r, s);
+  Tapas::Cell *root = Tapas::Partition(p, np, r, s);
   tapas::Map(interact, tapas::Product(*root, *root));
-  return root->boddy_attrs();
+  return root->body_attrs();
 }

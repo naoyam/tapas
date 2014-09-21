@@ -4,11 +4,11 @@
 #include "tapas/cell.h"
 
 #define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, int POS_OFFSET, class BT_ATTR, class ATTR=tapas::NONE
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
 #define CELL_TEMPLATE_PARAMS_NO_DEF \
-  int DIM, class FP, class BT, int POS_OFFSET, class BT_ATTR, class ATTR
+  int DIM, class FP, class BT, class BT_ATTR, class ATTR
 #define CELL_TEMPLATE_ARGS \
-  DIM, FP, BT, POS_OFFSET, BT_ATTR, ATTR
+  DIM, FP, BT, BT_ATTR, ATTR
 
 
 namespace tapas {
@@ -31,7 +31,7 @@ void Map(void (*f)(Cell<CELL_TEMPLATE_ARGS>&, Args...), T iter, Args...args) {
 #if 0
 template <CELL_TEMPLATE_PARAMS, class... Args>
 void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, PT_ATTR &a2, Args...),
-         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+         ProductIterator<BodyIterator<CELL_TEMPLATE_ARGS>, BodyIterator<CELL_TEMPLATE_ARGS> >
          iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), iter.attr_first(), iter.second(), iter.attr_second(), args...);
@@ -41,7 +41,7 @@ void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, PT_ATTR &a2, Args...
 
 template <CELL_TEMPLATE_PARAMS, class... Args>
 void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, Args...),
-         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+         ProductIterator<BodyIterator<CELL_TEMPLATE_ARGS>, BodyIterator<CELL_TEMPLATE_ARGS> >
          iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), iter.attr_first(), iter.second(), args...);
@@ -50,17 +50,17 @@ void Map(void (*f)(const PT &p1, PT_ATTR &a1, const PT &p2, Args...),
 }
 #else
 template <CELL_TEMPLATE_PARAMS, class... Args>
-void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1, Args...),
-         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+void Map(void (*f)(BodyIterator<CELL_TEMPLATE_ARGS> &p1, Args...),
+         BodyIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
   for (index_t i = 0; i < iter.size(); ++i) {
     f(iter, args...);
     ++iter;
   }
 }
 template <CELL_TEMPLATE_PARAMS, class... Args>
-void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1,
-                   ParticleIterator<CELL_TEMPLATE_ARGS> &p2, Args...),
-         ProductIterator<ParticleIterator<CELL_TEMPLATE_ARGS>, ParticleIterator<CELL_TEMPLATE_ARGS> >
+void Map(void (*f)(BodyIterator<CELL_TEMPLATE_ARGS> &p1,
+                   BodyIterator<CELL_TEMPLATE_ARGS> &p2, Args...),
+         ProductIterator<BodyIterator<CELL_TEMPLATE_ARGS>, BodyIterator<CELL_TEMPLATE_ARGS> >
          iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), iter.second(), args...);
@@ -72,7 +72,7 @@ void Map(void (*f)(ParticleIterator<CELL_TEMPLATE_ARGS> &p1,
 #if 0
 template <CELL_TEMPLATE_PARAMS, class... Args>
 void Map(void (*f)(const PT &p1, PT_ATTR &a1, Args...),
-         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+         BodyIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), iter.attr_first(), args...);
     ++iter;
@@ -81,7 +81,7 @@ void Map(void (*f)(const PT &p1, PT_ATTR &a1, Args...),
 
 template <CELL_TEMPLATE_PARAMS, class... Args>
 void Map(void (*f)(const PT &p1, Args...),
-         ParticleIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
+         BodyIterator<CELL_TEMPLATE_ARGS> iter, Args...args) {
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), args...);
     ++iter;

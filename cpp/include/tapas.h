@@ -5,5 +5,6 @@
 
 #include "tapas/main.h"
 #include "tapas/main_hot.h"
+#include "tapas/map.h"
 
 #endif

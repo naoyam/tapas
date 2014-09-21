@@ -23,6 +23,7 @@ class SubCellIterator;
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
   friend class BodyIterator<CELL_TEMPLATE_ARGS>;
+ protected:
 #if 0  
   BT_ATTR *dummy_;
   BT::type *BT_dummy_;

@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
   TAPAS_LOG_DEBUG() << "Keys: " << hn[0].key << "->" << hn[np-1].key << endl;
   
-  Tapas::Cell *root = Tapas::Partition(max_nb, p, np, r);
+  Tapas::Cell *root = Tapas::Partition(p, np, r, max_nb);
   
   return 0;
 }
