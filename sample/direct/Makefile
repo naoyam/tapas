@@ -7,8 +7,11 @@ CXX += -O0 -g3 -Wall -fno-elide-constructors
 ifeq ($(NB),)
 NB = 1024
 endif
+ifeq ($(S),)
+S = 10
+endif
 
-CXX += -DNB=$(NB)
+CXX += -DNB=$(NB) -DS=$(S)
 
 TAPAS_DIR = ../../cpp
 

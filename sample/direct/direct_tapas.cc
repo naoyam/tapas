@@ -25,6 +25,10 @@ const int N = 1 << 10;
 const float OPS = 20. * N * N * 1e-9;
 const float EPS2 = 1e-6;
 
+#ifndef S
+#define S (10)
+#endif
+
 double get_time() {
   struct timeval tv;
   gettimeofday(&tv,NULL);
@@ -66,7 +70,7 @@ typedef tapas::Tapas<DIM, float, BodyInfo,
 
 static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2, float eps2) {
   float dx = p2->x - p1->x;
-  //std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
+  std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
   float dy = p2->y - p1->y;
   float dz = p2->z - p1->z;
   float R2 = dx * dx + dy * dy + dz * dz + eps2;
@@ -121,7 +125,7 @@ int main() {
   std::cout << std::scientific << "N      : " << N << std::endl;
 
 
-  float4 *targetTapas = calc_direct(sourceHost, N, 100000);
+  float4 *targetTapas = calc_direct(sourceHost, N, S);
 #ifdef DUMP
   std::ofstream ref_out("ref.txt");
   std::ofstream tapas_out("tapas.txt");
