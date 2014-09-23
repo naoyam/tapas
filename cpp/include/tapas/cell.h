@@ -62,6 +62,13 @@ class Cell {
   const Cell &operator++() const {
     return *this;
   }
+  const Cell &operator++(int) const {
+    return *this;
+  }
+  void rewind(int idx) const {
+    TAPAS_ASSERT(idx == 0);
+    return;
+  }
 
   //SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
   //BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
@@ -73,7 +80,7 @@ class Cell {
   const ATTR &attr() const {
     return attr_;
   }
-
+  
   // Following methods are to be implemented in sub-classes 
   bool IsRoot() const;
   bool IsLeaf() const;
@@ -82,10 +89,10 @@ class Cell {
   Cell &parent() const;
   typename BT::type &body(index_t idx) const;
   BT_ATTR *body_attrs() const;
-  
+
  protected:
   BT_ATTR &attr(index_t idx) const;
-  
+  virtual void make_pure_virtual() const = 0;
 }; // class Cell
 
 

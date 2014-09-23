@@ -18,17 +18,21 @@ namespace tapas {
 template <class CellType, class T1, class T2, class... Args>
 void Map(void (*f)(CellType &, CellType &, Args...),
          ProductIterator<T1, T2> prod, Args...args) {
+  TAPAS_LOG_DEBUG() << "cell product iterator size: "
+                    << prod.size() << std::endl;  
   for (unsigned i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
-    ++prod;
+    prod++;
   }
 }
 
 template <class CELL, class T, class... Args>
 void Map(void (*f)(CELL&, Args...), T iter, Args...args) {
+  TAPAS_LOG_DEBUG() << "cell iterator size: "
+                    << iter.size() << std::endl;  
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
-    ++iter;
+    iter++;
   }
 }
 
@@ -37,16 +41,17 @@ void Map(void (*f)(BODY_ITERATOR &p1, Args...),
          BODY_ITERATOR iter, Args...args) {
   for (index_t i = 0; i < iter.size(); ++i) {
     f(iter, args...);
-    ++iter;
+    iter++;
   }
 }
 template <CELL_TEMPLATE_PARAMS, class CELL, class... Args>
 void Map(void (*f)(BODY_ITERATOR &p1, BODY_ITERATOR &p2, Args...),
          ProductIterator<BODY_ITERATOR, BODY_ITERATOR >
          iter, Args...args) {
+  TAPAS_LOG_DEBUG() << "map size: " << iter.size() << std::endl;
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(iter.first(), iter.second(), args...);
-    ++iter;
+    iter++;
   }
 }
 

@@ -62,6 +62,7 @@ typedef tapas::Tapas<DIM, float, BodyInfo,
 
 static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2, float eps2) {
   float dx = p2->x - p1->x;
+  std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
   float dy = p2->y - p1->y;
   float dz = p2->z - p1->z;
   float R2 = dx * dx + dy * dy + dz * dz + eps2;
@@ -89,7 +90,7 @@ static void interact(Tapas::Cell &c1, Tapas::Cell &c2) {
   }
 }
 
-float4 *calc_direct(struct float4 *p, size_t np, int s) {
+float4 *calc_direct(float4 *p, size_t np, int s) {
   // PartitionBSP is a function that partitions the given set of
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
@@ -118,8 +119,8 @@ int main() {
 
   std::cout << std::scientific << "No SSE : " << toc-tic << " s : " << OPS / (toc-tic) << " GFlops" << std::endl;
 
-  float4 *targetTapas = calc_direct(sourceHost, N, 10);
-
+  float4 *targetTapas = calc_direct(sourceHost, N, 100000);
+  std::cerr << "x: " << sourceHost[0].x << std::endl;
 #ifdef DUMP
   std::ofstream ref_out("ref.txt");
   std::ofstream tapas_out("tapas.txt");
@@ -128,6 +129,12 @@ int main() {
 // COMPARE RESULTS
   float pd = 0, pn = 0, fd = 0, fn = 0;
   for( int i=0; i<N; i++ ) {
+#ifdef DUMP
+    ref_out << targetHost[i].x << " " << targetHost[i].y << " "
+            << targetHost[i].z << " " << targetHost[i].w << std::endl;
+    tapas_out << targetTapas[i].x << " " << targetTapas[i].y << " "
+              << targetTapas[i].z << " " << targetTapas[i].w << std::endl;
+#endif
     targetHost[i].w -= sourceHost[i].w / sqrtf(EPS2);
     targetTapas[i].w -= sourceHost[i].w / sqrtf(EPS2);
     pd += (targetHost[i].w - targetTapas[i].w) * (targetHost[i].w - targetTapas[i].w);
@@ -136,12 +143,6 @@ int main() {
         + (targetHost[i].y - targetTapas[i].y) * (targetHost[i].y - targetTapas[i].y)
         + (targetHost[i].z - targetTapas[i].z) * (targetHost[i].z - targetTapas[i].z);
     fn += targetHost[i].x * targetHost[i].x + targetHost[i].y * targetHost[i].y + targetHost[i].z * targetHost[i].z;
-#ifdef DUMP
-    ref_out << targetHost[i].x << " " << targetHost[i].y << " "
-            << targetHost[i].z << " " << targetHost[i].w << std::endl;
-    tapas_out << targetTapas[i].x << " " << targetTapas[i].y << " "
-              << targetTapas[i].z << " " << targetTapas[i].w << std::endl;
-#endif
   }
   std::cout << std::scientific << "P ERR  : " << sqrtf(pd/pn) << std::endl;
   std::cout << std::scientific << "F ERR  : " << sqrtf(fd/fn) << std::endl;

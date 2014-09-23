@@ -1,4 +1,7 @@
-CXX = clang++ -std=c++11 -stdlib=libc++
+#CXX = clang++ -std=c++11 -stdlib=libc++ 
+CXX = g++ -std=c++11
+
+CXX += -O0 -g3 -Wall -fno-elide-constructors
 
 TAPAS_DIR = ../../cpp
 
@@ -16,3 +19,6 @@ direct_tapas.o: direct_tapas.cc
 
 direct_tapas: direct_tapas.o
 	$(CXX) $^ -o $@
+
+clean:
+	$(RM) -f *.o direct_tapas nbody

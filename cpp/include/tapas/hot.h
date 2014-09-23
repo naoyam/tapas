@@ -156,9 +156,15 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   const Cell &operator++() const {
     return *this;
   }
+  const Cell &operator++(int) const {
+    return *this;
+  }
   
   KeyType key() const { return key_; }
 
+  bool operator==(const Cell &c) const;
+  template <class T>
+  bool operator==(const T &x) const { return false; }
   bool IsRoot() const;
   bool IsLeaf() const;
   int nsubcells() const;
@@ -185,7 +191,8 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   Cell *Lookup(KeyType k) const;
   typename BT::type *bodies_;
   BT_ATTR *body_attrs_;
-  bool is_leaf_;  
+  bool is_leaf_;
+  virtual void make_pure_virtual() const {}
 }; // class Cell
 
 template <CELL_TEMPLATE_PARAMS>    
@@ -417,6 +424,7 @@ tapas::index_t FindFirst(const KeyType k,
   // Searches the first element that is grether or equal to the key.
   // Returns len if not found, i.e., all elements are less than the
   // key.
+  TAPAS_ASSERT(len > 0);
   index_t pivot = len / 2;
   index_t i = offset + pivot;
   index_t cur;
@@ -443,7 +451,10 @@ tapas::KeyPair GetBodyRange(const tapas::KeyType k,
                                         const HelperNode<DIM> *hn,
                                         const BT *b, index_t offset,
                                         index_t len) {
+  TAPAS_ASSERT(len > 0);
   index_t body_begin = FindFirst(k, hn, offset, len);
+  TAPAS_ASSERT(body_begin >= offset);
+  TAPAS_ASSERT(body_begin < len);
   index_t body_num = GetBodyNumber(k, hn, b, body_begin,
                                    len-(body_begin-offset));
   return std::make_pair(body_begin, body_num);
@@ -456,9 +467,16 @@ tapas::index_t GetBodyNumber(const tapas::KeyType k,
                                          index_t offset,
                                          index_t len) {
   //index_t body_begin = FindFirst(k, hn, offset, len);
+  if (len == 0) return 0;
+  if (len == 1) return 1;
   KeyType next_key = CalcMortonKeyNext<DIM>(k);
   index_t body_end = FindFirst(next_key, hn, offset+1, len-1);
   return body_end - offset;
+}
+
+template <CELL_TEMPLATE_PARAMS_NO_DEF>
+bool Cell<CELL_TEMPLATE_ARGS>::operator==(const Cell &c) const {
+  return key_ == c.key_;
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
@@ -550,8 +568,9 @@ Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
 
   SortNodes<DIM>(hn, nb);
   SortBodies<DIM, BT>(b, b_work, hn, nb);
-  std::memcpy(b, b_work, sizeof(BT) * nb);
-  BT_ATTR *attrs = new BT_ATTR[nb];
+  std::memcpy(b, b_work, sizeof(typename BT::type) * nb);
+  //BT_ATTR *attrs = new BT_ATTR[nb];
+  BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
 
   KeyType root_key = 0;
   KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb);

@@ -18,29 +18,22 @@ class BodyIterator {
  public:
   BodyIterator(const CellType &c)
       : c_(c), idx_(0) {}
-#if 0  
-  typedef BT::type value_type;
-#else  
   typedef BodyIterator value_type;
-#endif  
   typedef BT_ATTR attr_type;  
   index_t size() const {
     return c_.nb();
   }
-#if 0
-  BT::type &&operator*() const {
-    return c_.body(idx_);
-  }
-#else
   const BodyIterator &operator*() const {
     return *this;
   }
   BodyIterator &operator*() {
     return *this;
   }
-#endif    
   typename BT::type *operator->() const {
     return &(c_.body(idx_));
+  }
+  void rewind(int idx) {
+    idx_ = idx;
   }
   BT_ATTR &attr() const {
     return c_.body_attr(idx_);
@@ -54,6 +47,9 @@ class BodyIterator {
   typename BT::type &operator++() {
     return c_.body(++idx_);
   }
+  typename BT::type &operator++(int) {
+    return c_.body(idx_++);
+  }
   bool operator==(const BodyIterator &x) const {
     return c_ == x.c_ && idx_ == x.idx_;
   }
@@ -61,35 +57,6 @@ class BodyIterator {
   bool operator==(const T &x) const { return false; }
 };
 
-#if 0
-template <CELL_TEMPLATE_PARAMS>
-class SubCellIterator {
-  const Cell<CELL_TEMPLATE_ARGS> &c_;
-  int idx_;
- public:
-  typedef Cell<CELL_TEMPLATE_ARGS> value_type;
-  typedef ATTR attr_type;  
-  SubCellIterator(const Cell<CELL_TEMPLATE_ARGS> &c): c_(c), idx_(0) {}
-  unsigned size() const {
-    if (c_.IsLeaf()) {
-      return 0;
-    } else {
-      return 1 << DIM;
-    }
-  }
-  Cell<CELL_TEMPLATE_ARGS> &operator*() const {
-    return c_.subcell(idx_);
-  }
-  Cell<CELL_TEMPLATE_ARGS> &operator++() {
-    return c_.subcell(++idx_);
-  }
-  bool operator==(const SubCellIterator &x) const {
-    return c_ == x.c_;
-  }
-  template <class T>
-  bool operator==(const T &x) const { return false; }
-}; // class SubCellIterator
-#else
 template <int DIM, class CELL>
 class SubCellIterator {
   const CELL &c_;
@@ -111,13 +78,18 @@ class SubCellIterator {
   CELL &operator++() {
     return c_.subcell(++idx_);
   }
+  CELL &operator++(int) {
+    return c_.subcell(idx_++);
+  }
+  void rewind(int idx) {
+    idx_ = idx;
+  }
   bool operator==(const SubCellIterator &x) const {
     return c_ == x.c_;
   }
   template <class T>
   bool operator==(const T &x) const { return false; }
 }; // class SubCellIterator
-#endif
 
 template <class T1, class T2>
 class ProductIterator {
@@ -130,6 +102,7 @@ class ProductIterator {
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
     if (t1_ == t2_) {
       idx2_ = 1;
+      t2_.rewind(idx2_);
     }
   }
   unsigned size() const {
@@ -152,18 +125,21 @@ class ProductIterator {
     return t2_.attr();
   }
   
-  ProductIterator<T1, T2> &operator++() {
+  void operator++(int) {
     if (idx2_ + 1 == t2_.size()) {
-      ++idx1_;
+      idx1_++;
+      t1_++;
       if (t1_ == t2_) {
         idx2_ = idx1_ + 1;
       } else {
         idx2_ = 0;
       }
+      t2_.rewind(idx2_);      
     } else {
-      ++idx2_;
+      idx2_++;
+      t2_++;
     }
-    return *this;
+    //return *this;
   }
 }; // class ProductIterator
 
