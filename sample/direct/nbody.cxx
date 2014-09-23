@@ -2,9 +2,12 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#ifdef USE_PAPI
 #include <papi.h>
+#endif
 #include <sys/time.h>
 #include <xmmintrin.h>
+#include <fstream>
 
 struct float4 {
   float x;
@@ -13,7 +16,7 @@ struct float4 {
   float w;
 };
 
-const int N = 1 << 15;
+const int N = 1 << 10;
 const float OPS = 20. * N * N * 1e-9;
 const float EPS2 = 1e-6;
 
@@ -181,38 +184,48 @@ int main() {
   std::cout << std::scientific << "N      : " << N << std::endl;
 
 // Host P2P
+#ifdef USE_PAPI
   int Events[3] = { PAPI_L2_DCM, PAPI_L2_DCA, PAPI_TLB_DM };
   int EventSet = PAPI_NULL;
   PAPI_library_init(PAPI_VER_CURRENT);
   PAPI_create_eventset(&EventSet);
   PAPI_add_events(EventSet, Events, 3);
   PAPI_start(EventSet);
+#endif
 
   double tic = get_time();
   P2P(targetHost,sourceHost,N,N,EPS2);
   double toc = get_time();
 
+#ifdef USE_PAPI
   long long values[3];
   PAPI_stop(EventSet,values);
   std::cout << "L2 Miss: " << values[0]
             << " L2 Access: " << values[1]
             << " TLB Miss: " << values[2] << std::endl;
+#endif
 
   std::cout << std::scientific << "No SSE : " << toc-tic << " s : " << OPS / (toc-tic) << " GFlops" << std::endl;
 
 // SSE P2P
+#ifdef USE_PAPI
   PAPI_start(EventSet);
-
+#endif
   tic = get_time();
   P2Psse(targetSSE,sourceHost,N,N,EPS2);
   toc = get_time();
-
+#ifdef USE_PAPI
   PAPI_stop(EventSet,values);
   std::cout << "L2 Miss: " << values[0]
             << " L2 Access: " << values[1]
             << " TLB Miss: " << values[2] << std::endl;
+#endif
 
   std::cout << std::scientific << "SSE    : " << toc-tic << " s : " << OPS / (toc-tic) << " GFlops" << std::endl;
+
+#ifdef DUMP
+  std::ofstream dout("target.txt");
+#endif
 
 // COMPARE RESULTS
   float pd = 0, pn = 0, fd = 0, fn = 0;
@@ -225,6 +238,10 @@ int main() {
         + (targetHost[i].y - targetSSE[i].y) * (targetHost[i].y - targetSSE[i].y)
         + (targetHost[i].z - targetSSE[i].z) * (targetHost[i].z - targetSSE[i].z);
     fn += targetHost[i].x * targetHost[i].x + targetHost[i].y * targetHost[i].y + targetHost[i].z * targetHost[i].z;
+#ifdef DUMP
+    dout << targetHost[i].x << " " << targetHost[i].y << " "
+         << targetHost[i].z << " " << targetHost[i].w << std::endl;
+#endif
   }
   std::cout << std::scientific << "P ERR  : " << sqrtf(pd/pn) << std::endl;
   std::cout << std::scientific << "F ERR  : " << sqrtf(fd/fn) << std::endl;
