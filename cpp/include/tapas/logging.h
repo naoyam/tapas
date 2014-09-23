@@ -51,7 +51,7 @@ class Logger {
 
   Logger LogError(const char *file, const char *func, int line) {
     if (enabled_ && level_ >= TAPAS_LOG_LEVEL_ERROR) {
-      LogHeader("ERROR", file, func, line, 2);
+      LogHeader("ERROR", file, func, line);
     } else {
       enabled_ = false;
     }
@@ -60,7 +60,7 @@ class Logger {
 
   Logger LogWarning(const char *file, const char *func, int line) {
     if (enabled_ && level_ >= TAPAS_LOG_LEVEL_WARNING) {
-      LogHeader("WARNING", file, func, line, 0);
+      LogHeader("WARNING", file, func, line);
     } else {
       enabled_ = false;
     }
@@ -69,7 +69,7 @@ class Logger {
 
   Logger LogInfo(const char *file, const char *func, int line) {
     if (enabled_ && level_ >= TAPAS_LOG_LEVEL_INFO) {
-      LogHeader("INFO", file, func, line, 3);
+      LogHeader("INFO", file, func, line);
     } else {
       enabled_ = false;
     }
@@ -78,7 +78,7 @@ class Logger {
 
   Logger LogDebug(const char *file, const char *func, int line) {
     if (enabled_ && level_ >= TAPAS_LOG_LEVEL_DEBUG) {
-      LogHeader("DEBUG", file, func, line, 2);
+      LogHeader("DEBUG", file, func, line);
     } else {
       enabled_ = false;
     }
