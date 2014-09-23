@@ -4,7 +4,11 @@ CXX = clang++ -std=c++11 -fcolor-diagnostics
 
 CXX += -O0 -g3 -Wall -fno-elide-constructors
 
-CXX += -DNB=4
+ifeq ($(NB),)
+NB = 1024
+endif
+
+CXX += -DNB=$(NB)
 
 TAPAS_DIR = ../../cpp
 

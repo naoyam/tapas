@@ -66,7 +66,7 @@ typedef tapas::Tapas<DIM, float, BodyInfo,
 
 static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2, float eps2) {
   float dx = p2->x - p1->x;
-  std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
+  //std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
   float dy = p2->y - p1->y;
   float dz = p2->z - p1->z;
   float R2 = dx * dx + dy * dy + dz * dz + eps2;
