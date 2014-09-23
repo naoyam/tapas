@@ -14,19 +14,27 @@
 
 namespace tapas {
 
-template <int DIM, class BT, class BT_ATTR, class CellType>
+//template <int DIM, class BT, class BT_ATTR, class CellType>
+template <class CellType>
 class BodyIterator;
 
 #if 0
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 class SubCellIterator;
-#else
+#elif 0
 template <int DIM, class CELL>
+class SubCellIterator;
+#else
+template <class CELL>
 class SubCellIterator;
 #endif
 
 template <CELL_TEMPLATE_PARAMS>
 class Cell {
+ public:
+  static const int dim = DIM;
+  typedef BT BODY_INFO;
+  typedef BT_ATTR BODY_ATTR;
  protected:
 #if 0  
   BT_ATTR *dummy_;
@@ -52,9 +60,12 @@ class Cell {
   template <class T>
   bool operator==(const T &x) const { return false; }
   
-  // Iterator interface
+  // Iterator interface (to be obsoleted)
+#if 0  
   typedef Cell value_type;
-  typedef ATTR attr_type;  
+#endif  
+  typedef ATTR attr_type;
+#if 0  
   unsigned size() const { return 1; }
   Cell &operator*() {
     return *this;
@@ -69,7 +80,7 @@ class Cell {
     TAPAS_ASSERT(idx == 0);
     return;
   }
-
+#endif
   //SubCellIterator<CELL_TEMPLATE_ARGS> subcells() const;
   //BodyIterator<CELL_TEMPLATE_ARGS> bodies() const;
 

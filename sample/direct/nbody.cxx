@@ -16,7 +16,11 @@ struct float4 {
   float w;
 };
 
+#ifdef NB
+const int N = NB;
+#else
 const int N = 1 << 10;
+#endif
 const float OPS = 20. * N * N * 1e-9;
 const float EPS2 = 1e-6;
 
@@ -175,6 +179,7 @@ int main() {
   float4 *sourceHost = new float4 [N];
   float4 *targetHost = new float4 [N];
   float4 *targetSSE = new float4 [N];
+  srand48(0);
   for( int i=0; i<N; i++ ) {
     sourceHost[i].x = drand48();
     sourceHost[i].y = drand48();
@@ -230,6 +235,10 @@ int main() {
 // COMPARE RESULTS
   float pd = 0, pn = 0, fd = 0, fn = 0;
   for( int i=0; i<N; i++ ) {
+#ifdef DUMP
+    dout << targetHost[i].x << " " << targetHost[i].y << " "
+         << targetHost[i].z << " " << targetHost[i].w << std::endl;
+#endif
     targetHost[i].w -= sourceHost[i].w / sqrtf(EPS2);
     targetSSE[i].w -= sourceHost[i].w / sqrtf(EPS2);
     pd += (targetHost[i].w - targetSSE[i].w) * (targetHost[i].w - targetSSE[i].w);
@@ -238,10 +247,6 @@ int main() {
         + (targetHost[i].y - targetSSE[i].y) * (targetHost[i].y - targetSSE[i].y)
         + (targetHost[i].z - targetSSE[i].z) * (targetHost[i].z - targetSSE[i].z);
     fn += targetHost[i].x * targetHost[i].x + targetHost[i].y * targetHost[i].y + targetHost[i].z * targetHost[i].z;
-#ifdef DUMP
-    dout << targetHost[i].x << " " << targetHost[i].y << " "
-         << targetHost[i].z << " " << targetHost[i].w << std::endl;
-#endif
   }
   std::cout << std::scientific << "P ERR  : " << sqrtf(pd/pn) << std::endl;
   std::cout << std::scientific << "F ERR  : " << sqrtf(fd/fn) << std::endl;

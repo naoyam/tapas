@@ -17,12 +17,13 @@
 #include "tapas/bitarith.h"
 #include "tapas/logging.h"
 #include "tapas/debug_util.h"
+#include "tapas/iterator.h"
 
-#define CELL_TEMPLATE_PARAMS \
+#define CELL_TEMPLATE_PARAMS                                            \
   int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
-#define CELL_TEMPLATE_PARAMS_NO_DEF \
+#define CELL_TEMPLATE_PARAMS_NO_DEF                             \
   int DIM, class FP, class BT, class BT_ATTR, class ATTR
-#define CELL_TEMPLATE_ARGS \
+#define CELL_TEMPLATE_ARGS                      \
   DIM, FP, BT, BT_ATTR, ATTR
 #define CELL Cell<CELL_TEMPLATE_ARGS>
 
@@ -133,7 +134,8 @@ class Partition;
 template <CELL_TEMPLATE_PARAMS>
 class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   friend class Partition<CELL_TEMPLATE_ARGS>;
-  friend class BodyIterator<DIM, BT, BT_ATTR, Cell>;
+  //friend class BodyIterator<DIM, BT, BT_ATTR, Cell>;
+  friend class BodyIterator<Cell>;
  public:
   typedef unordered_map<KeyType, Cell*> HashTable;
  protected:
@@ -148,8 +150,10 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
       ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
       is_leaf_(true) {}
 
-  typedef Cell value_type;
+  //typedef Cell value_type;
   typedef ATTR attr_type;
+  typedef BT_ATTR body_attr_type;
+#if 0  
   Cell &operator*() {
     return *this;
   }
@@ -159,7 +163,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   const Cell &operator++(int) const {
     return *this;
   }
-  
+#endif  
   KeyType key() const { return key_; }
 
   bool operator==(const Cell &c) const;
@@ -176,14 +180,16 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   }
 #endif
   typename BT::type &body(index_t idx) const;
-  BodyIterator<DIM, BT, BT_ATTR, Cell> bodies() const;
+  //BodyIterator<DIM, BT, BT_ATTR, Cell> bodies() const;
+  BodyIterator<Cell> bodies() const;
 #ifdef DEPRECATED
   BT_ATTR *particle_attrs() const {
     return body_attrs();
   }
 #endif
   BT_ATTR *body_attrs() const;
-  SubCellIterator<DIM, Cell> subcells() const;
+  //SubCellIterator<DIM, Cell> subcells() const;
+  SubCellIterator<Cell> subcells() const;
   
  protected:
   BT_ATTR &body_attr(index_t idx) const;
@@ -309,8 +315,8 @@ void SortNodes(HelperNode<DIM> *nodes, index_t n) {
 
 template <int DIM, class BT>
 void SortBodies(const typename BT::type *b, typename BT::type *sorted,
-                            const HelperNode<DIM> *sorted_nodes,
-                            tapas::index_t nb) {
+                const HelperNode<DIM> *sorted_nodes,
+                tapas::index_t nb) {
   for (index_t i = 0; i < nb; ++i) {
     sorted[i] = b[sorted_nodes[i].p_index];
   }
@@ -318,7 +324,7 @@ void SortBodies(const typename BT::type *b, typename BT::type *sorted,
 
 template <int DIM>
 tapas::KeyType FindFinestAncestor(tapas::KeyType x,
-                                              tapas::KeyType y) {
+                                  tapas::KeyType y) {
   int min_depth = std::min(MortonKeyGetDepth(x),
                            MortonKeyGetDepth(y));
   x = MortonKeyRemoveDepth(x);
@@ -393,7 +399,7 @@ tapas::KeyType MortonKeyChild(KeyType k, int child_idx) {
 
 template <int DIM>
 void CompleteRegion(tapas::KeyType x, tapas::KeyType y,
-                                tapas::KeyVector &s) {
+                    tapas::KeyVector &s) {
   KeyType fa = FindFinestAncestor<DIM>(x, y);
   KeyList w;
   AppendChildren<DIM>(fa, w);
@@ -417,9 +423,9 @@ void CompleteRegion(tapas::KeyType x, tapas::KeyType y,
 
 template <int DIM>
 tapas::index_t FindFirst(const KeyType k,
-                                     const HelperNode<DIM> *hn,
-                                     const index_t offset,
-                                     const index_t len) {
+                         const HelperNode<DIM> *hn,
+                         const index_t offset,
+                         const index_t len) {
   // Assume hn is softed by key
   // Searches the first element that is grether or equal to the key.
   // Returns len if not found, i.e., all elements are less than the
@@ -448,9 +454,9 @@ tapas::index_t FindFirst(const KeyType k,
 // by the given key. 
 template <int DIM, class BT>
 tapas::KeyPair GetBodyRange(const tapas::KeyType k,
-                                        const HelperNode<DIM> *hn,
-                                        const BT *b, index_t offset,
-                                        index_t len) {
+                            const HelperNode<DIM> *hn,
+                            const BT *b, index_t offset,
+                            index_t len) {
   TAPAS_ASSERT(len > 0);
   index_t body_begin = FindFirst(k, hn, offset, len);
   TAPAS_ASSERT(body_begin >= offset);
@@ -462,10 +468,10 @@ tapas::KeyPair GetBodyRange(const tapas::KeyType k,
 
 template <int DIM, class BT>
 tapas::index_t GetBodyNumber(const tapas::KeyType k,
-                                         const HelperNode<DIM> *hn,
-                                         const BT *b,
-                                         index_t offset,
-                                         index_t len) {
+                             const HelperNode<DIM> *hn,
+                             const BT *b,
+                             index_t offset,
+                             index_t len) {
   //index_t body_begin = FindFirst(k, hn, offset, len);
   if (len == 0) return 0;
   if (len == 1) return 1;
@@ -545,16 +551,23 @@ BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::body_attr(index_t idx) const {
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-SubCellIterator<DIM, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+//SubCellIterator<DIM, Cell<CELL_TEMPLATE_ARGS> >
+//Cell<CELL_TEMPLATE_ARGS>::
+SubCellIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
-  return SubCellIterator<DIM, Cell>(*this);
+  //return SubCellIterator<DIM, Cell>(*this);
+  return SubCellIterator<Cell>(*this);
 }
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+//BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+BodyIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
 bodies() const {
-  return BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> >(*this);
+  //return BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS>
+  //>(*this);
+  TAPAS_LOG_DEBUG() << "Body iterator" << std::endl;
+  return BodyIterator<Cell<CELL_TEMPLATE_ARGS> >(*this);
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
@@ -624,8 +637,39 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
   c->is_leaf_ = false;
 }
 
-
 } // namespace hot
+
+template <CELL_TEMPLATE_PARAMS, class T2>
+ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, T2> Product(
+    hot::Cell<CELL_TEMPLATE_ARGS> &c, T2 t2) {
+  TAPAS_LOG_DEBUG() << "Cell-X product\n";
+  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
+  typedef CellIterator<CellType> CellIterType;
+  return ProductIterator<CellIterType, T2>(CellIterType(c), t2);
+}
+
+template <class T1, CELL_TEMPLATE_PARAMS>
+ProductIterator<T1, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > > Product(
+    T1 t1, hot::Cell<CELL_TEMPLATE_ARGS> &c) {
+  TAPAS_LOG_DEBUG() << "X-Cell product\n";
+  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
+  typedef CellIterator<CellType> CellIterType;
+  return ProductIterator<T1, CellIterType>(t1, CellIterType(c));
+}
+
+template <CELL_TEMPLATE_PARAMS>
+ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > >
+Product(
+    hot::Cell<CELL_TEMPLATE_ARGS> &c1,
+    hot::Cell<CELL_TEMPLATE_ARGS> &c2) {
+  TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
+  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
+  typedef CellIterator<CellType> CellIterType;
+  return ProductIterator<CellIterType, CellIterType>(
+      CellIterType(c1), CellIterType(c2));
+}
+
+
 } // namespace tapas
 
 #undef CELL_TEMPLATE_PARAMS

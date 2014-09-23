@@ -11,7 +11,8 @@
   DIM, FP, BT, BT_ATTR, ATTR
 
 namespace tapas {
-template <int DIM, class BT, class BT_ATTR, class CellType>
+//template <int DIM, class BT, class BT_ATTR, class CellType>
+template <class CellType>
 class BodyIterator {
   const CellType &c_;
   index_t idx_;
@@ -19,7 +20,7 @@ class BodyIterator {
   BodyIterator(const CellType &c)
       : c_(c), idx_(0) {}
   typedef BodyIterator value_type;
-  typedef BT_ATTR attr_type;  
+  typedef typename CellType::body_attr_type attr_type;  
   index_t size() const {
     return c_.nb();
   }
@@ -29,13 +30,13 @@ class BodyIterator {
   BodyIterator &operator*() {
     return *this;
   }
-  typename BT::type *operator->() const {
+  typename CellType::BODY_INFO::type *operator->() const {
     return &(c_.body(idx_));
   }
   void rewind(int idx) {
     idx_ = idx;
   }
-  BT_ATTR &attr() const {
+  typename CellType::BODY_ATTR &attr() const {
     return c_.body_attr(idx_);
   }
   CellType &cell() {
@@ -44,20 +45,64 @@ class BodyIterator {
   const CellType &cell() const {
     return c_;
   }
-  typename BT::type &operator++() {
+  typename CellType::BODY_INFO::type &operator++() {
     return c_.body(++idx_);
   }
-  typename BT::type &operator++(int) {
+  typename CellType::BODY_INFO::type &operator++(int) {
     return c_.body(idx_++);
   }
   bool operator==(const BodyIterator &x) const {
     return c_ == x.c_ && idx_ == x.idx_;
   }
+  bool operator!=(const BodyIterator &x) const {
+    return !operator==(x);
+  }
   template <class T>
   bool operator==(const T &x) const { return false; }
+  bool AllowMutualInteraction(const BodyIterator &x) const {
+    return c_ == x.c_;
+  }
 };
 
-template <int DIM, class CELL>
+template <class CELL>
+class CellIterator {
+  CELL &c_;
+ public:
+  CellIterator(CELL &c): c_(c) {}
+  typedef CELL value_type;
+  typedef typename CELL::attr_type attr_type;
+  CELL &operator*() {
+    return c_;
+  }
+  const CELL &operator*() const {
+    return c_;
+  }
+  CELL &operator++() {
+    return c_;
+  }
+  CELL &operator++(int) {
+    return c_;
+  }
+  attr_type &attr() {
+    return c_.attr();
+  }
+  const attr_type &attr() const {
+    return c_.attr();
+  }
+  bool operator==(const CellIterator &x) const {
+    return c_ == x.c_;
+  }
+  template <class T>
+  bool operator==(const T &x) const { return false; }
+  void rewind(int idx) {
+  }
+  int size() const {
+    return 1;
+  }
+}; // class CellIterator
+
+//template <int DIM, class CELL>
+template <class CELL>
 class SubCellIterator {
   const CELL &c_;
   int idx_;
@@ -65,20 +110,20 @@ class SubCellIterator {
   typedef CELL value_type;
   typedef typename CELL::attr_type attr_type;  
   SubCellIterator(const CELL &c): c_(c), idx_(0) {}
-  unsigned size() const {
+  int size() const {
     if (c_.IsLeaf()) {
       return 0;
     } else {
-      return 1 << DIM;
+      return 1 << CELL::dim;
     }
   }
-  CELL &operator*() const {
+  value_type &operator*() const {
     return c_.subcell(idx_);
   }
-  CELL &operator++() {
+  value_type &operator++() {
     return c_.subcell(++idx_);
   }
-  CELL &operator++(int) {
+  value_type &operator++(int) {
     return c_.subcell(idx_++);
   }
   void rewind(int idx) {
@@ -91,31 +136,30 @@ class SubCellIterator {
   bool operator==(const T &x) const { return false; }
 }; // class SubCellIterator
 
-template <class T1, class T2>
+
+template <class T1, class T2=void>
 class ProductIterator {
   index_t idx1_;
   index_t idx2_;
-  T1 &t1_;
-  T2 &t2_;
+  T1 t1_;
+  T2 t2_;
  public:
-  ProductIterator(T1 &t1, T2 &t2):
+  ProductIterator(const T1 &t1, const T2 &t2):
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
-    if (t1_ == t2_) {
-      idx2_ = 1;
-      t2_.rewind(idx2_);
-    }
   }
-  unsigned size() const {
-    if (t1_ == t2_) {
-      return (t1_.size() + 1) * t1_.size() / 2;
-    } else {
-      return t1_.size() * t2_.size();
-    }
+  index_t size() const {
+    return t1_.size() * t2_.size();
   }
-  typename T1::value_type &first() const {
+  const typename T1::value_type &first() const {
     return *t1_;
   }
-  typename T2::value_type &second() const {
+  typename T1::value_type &first() {
+    return *t1_;
+  }
+  const typename T2::value_type &second() const {
+    return *t2_;
+  }
+  typename T2::value_type &second() {
     return *t2_;
   }
   typename T1::attr_type &attr_first() const {
@@ -129,8 +173,74 @@ class ProductIterator {
     if (idx2_ + 1 == t2_.size()) {
       idx1_++;
       t1_++;
-      if (t1_ == t2_) {
+      idx2_ = 0;
+      t2_.rewind(idx2_);      
+    } else {
+      idx2_++;
+      t2_++;
+    }
+    //return *this;
+  }
+}; // class ProductIterator
+
+template <class CELL>
+class ProductIterator<CELL, void> {
+  index_t idx1_;
+  index_t idx2_;
+  typedef BodyIterator<CELL> BITER;
+  BITER t1_;
+  BITER t2_;
+ public:
+  ProductIterator(const BITER &t1, const BITER &t2):
+      idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
+    if (t1_.AllowMutualInteraction(t2_)) {
+      TAPAS_LOG_ERROR() << "mutual interaction\n";
+#if 0 // No self interaction     
+      idx2_ = 1;
+      t2_.rewind(idx2_);      
+#endif
+    }
+  }
+  index_t size() const {
+    if (t1_.AllowMutualInteraction(t2_)) {
+#if 0  // No self interaction
+      return (t1_.size() - 1) * t1_.size() / 2;
+#else
+      return (t1_.size() + 1) * t1_.size() / 2;      
+#endif
+    } else {
+      return t1_.size() * t2_.size();
+    }
+  }
+  const typename BITER::value_type &first() const {
+    return *t1_;
+  }
+  typename BITER::value_type &first() {
+    return *t1_;
+  }
+  const typename BITER::value_type &second() const {
+    return *t2_;
+  }
+  typename BITER::value_type &second() {
+    return *t2_;
+  }
+  typename BITER::attr_type &attr_first() const {
+    return t1_.attr();
+  }
+  typename BITER::attr_type &attr_second() const {
+    return t2_.attr();
+  }
+  
+  void operator++(int) {
+    if (idx2_ + 1 == t2_.size()) {
+      idx1_++;
+      t1_++;
+      if (t1_.AllowMutualInteraction(t2_)) {
+#if 0 // No self interaction        
         idx2_ = idx1_ + 1;
+#else
+        idx2_ = idx1_;
+#endif        
       } else {
         idx2_ = 0;
       }
@@ -143,28 +253,20 @@ class ProductIterator {
   }
 }; // class ProductIterator
 
+
+
 template <class T1, class T2>
 ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
+  TAPAS_LOG_ERROR() << "Product(X, X)" << std::endl;  
   return ProductIterator<T1, T2>(t1, t2);
 }
 
-template <CELL_TEMPLATE_PARAMS, class T2>
-ProductIterator<Cell<CELL_TEMPLATE_ARGS>, T2> Product(
-    Cell<CELL_TEMPLATE_ARGS> &c, T2 t2) {
-  return ProductIterator<Cell<CELL_TEMPLATE_ARGS>, T2>(c, t2);
-}
 
-template <class T1, CELL_TEMPLATE_PARAMS>
-ProductIterator<T1, Cell<CELL_TEMPLATE_ARGS> > Product(
-    T1 t1, Cell<CELL_TEMPLATE_ARGS> &c) {
-  return ProductIterator<T1, Cell<CELL_TEMPLATE_ARGS> >(t1, c);
-}
-
-template <CELL_TEMPLATE_PARAMS>
-ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> > Product(
-    Cell<CELL_TEMPLATE_ARGS> &c1,
-    Cell<CELL_TEMPLATE_ARGS> &c2) {
-  return ProductIterator<Cell<CELL_TEMPLATE_ARGS>, Cell<CELL_TEMPLATE_ARGS> >(c1, c2);
+template <class CELL>
+ProductIterator<CELL> Product(
+    BodyIterator<CELL> c1, BodyIterator<CELL> c2) {
+  TAPAS_LOG_ERROR() << "Product(BodyIterator, BodyIterator)" << std::endl;
+  return ProductIterator<CELL>(c1, c2);
 }
 
 

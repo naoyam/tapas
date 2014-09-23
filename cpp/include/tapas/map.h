@@ -4,21 +4,12 @@
 #include "tapas/cell.h"
 #include "tapas/iterator.h"
 
-#define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
-#define CELL_TEMPLATE_PARAMS_NO_DEF \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR
-#define CELL_TEMPLATE_ARGS \
-  DIM, FP, BT, BT_ATTR, ATTR
-#define BODY_ITERATOR_ARGS DIM, BT, BT_ATTR, CELL
-#define BODY_ITERATOR BodyIterator<BODY_ITERATOR_ARGS>
-
 namespace tapas {
 
-template <class CellType, class T1, class T2, class... Args>
-void Map(void (*f)(CellType &, CellType &, Args...),
-         ProductIterator<T1, T2> prod, Args...args) {
-  TAPAS_LOG_DEBUG() << "cell product iterator size: "
+template <class T1, class T2, class T1_Iter, class T2_Iter, class... Args>
+void Map(void (*f)(T1 &, T2 &, Args...),
+         ProductIterator<T1_Iter, T2_Iter> prod, Args...args) {
+  TAPAS_LOG_DEBUG() << "map product iterator size: "
                     << prod.size() << std::endl;  
   for (unsigned i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
@@ -26,9 +17,21 @@ void Map(void (*f)(CellType &, CellType &, Args...),
   }
 }
 
-template <class CELL, class T, class... Args>
-void Map(void (*f)(CELL&, Args...), T iter, Args...args) {
-  TAPAS_LOG_DEBUG() << "cell iterator size: "
+template <class T1, class T1_Iter, class... Args>
+void Map(void (*f)(T1 &, T1 &, Args...),
+         ProductIterator<T1_Iter> prod, Args...args) {
+  TAPAS_LOG_DEBUG() << "map product iterator size: "
+                    << prod.size() << std::endl;  
+  for (unsigned i = 0; i < prod.size(); ++i) {
+    f(prod.first(), prod.second(), args...);
+    prod++;
+  }
+}
+
+
+template <class T, class T_Iter, class... Args>
+void Map(void (*f)(T &, Args...), T_Iter iter, Args...args) {
+  TAPAS_LOG_DEBUG() << "map non-product iterator size: "
                     << iter.size() << std::endl;  
   for (unsigned i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
@@ -36,31 +39,6 @@ void Map(void (*f)(CELL&, Args...), T iter, Args...args) {
   }
 }
 
-template <CELL_TEMPLATE_PARAMS, class CELL, class... Args>
-void Map(void (*f)(BODY_ITERATOR &p1, Args...),
-         BODY_ITERATOR iter, Args...args) {
-  for (index_t i = 0; i < iter.size(); ++i) {
-    f(iter, args...);
-    iter++;
-  }
-}
-template <CELL_TEMPLATE_PARAMS, class CELL, class... Args>
-void Map(void (*f)(BODY_ITERATOR &p1, BODY_ITERATOR &p2, Args...),
-         ProductIterator<BODY_ITERATOR, BODY_ITERATOR >
-         iter, Args...args) {
-  TAPAS_LOG_DEBUG() << "map size: " << iter.size() << std::endl;
-  for (unsigned i = 0; i < iter.size(); ++i) {
-    f(iter.first(), iter.second(), args...);
-    iter++;
-  }
-}
-
 } // namespace tapas
-
-#undef CELL_TEMPLATE_PARAMS
-#undef CELL_TEMPLATE_PARAMS_NO_DEF
-#undef CELL_TEMPLATE_ARGS
-#undef BODY_ITERATOR_ARGS
-#undef BODY_ITERATOR
 
 #endif // TAPAS_MAP_H_

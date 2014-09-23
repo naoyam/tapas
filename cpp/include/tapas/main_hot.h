@@ -13,7 +13,8 @@ template <int DIM, class FP, class BT,
 class Tapas<DIM, FP, BT, BT_ATTR, CELL_ATTR, HOT> {
  public:
   typedef tapas::hot::Cell<DIM, FP, BT, BT_ATTR, CELL_ATTR> Cell;
-  typedef tapas::BodyIterator<DIM, BT, BT_ATTR, Cell> BodyIterator;
+  //typedef tapas::BodyIterator<DIM, BT, BT_ATTR, Cell> BodyIterator;
+  typedef tapas::BodyIterator<Cell> BodyIterator;  
   static Cell *Partition(typename BT::type *b,
                          index_t nb, const Region<DIM, FP> &r,
                          int max_nb) {

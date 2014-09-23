@@ -17,7 +17,11 @@ struct float4 {
   float w;
 };
 
+#ifdef NB
+const int N = NB;
+#else
 const int N = 1 << 10;
+#endif
 const float OPS = 20. * N * N * 1e-9;
 const float EPS2 = 1e-6;
 
@@ -66,16 +70,18 @@ static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2, float eps2)
   float dy = p2->y - p1->y;
   float dz = p2->z - p1->z;
   float R2 = dx * dx + dy * dy + dz * dz + eps2;
-  float invR = 1.0 / sqrtf(R2);
+  float invR = 1.0f / sqrtf(R2);
   float invR3 = invR * invR * invR;
   p1.attr().x += dx * invR3 * p2->w;
   p1.attr().y += dy * invR3 * p2->w;
   p1.attr().z += dz * invR3 * p2->w;
   p1.attr().w += invR * p2->w;
-  p2.attr().x += -dx * invR3 * p1->w;
-  p2.attr().y += -dy * invR3 * p1->w;
-  p2.attr().z += -dz * invR3 * p1->w;
-  p2.attr().w += invR * p1->w;
+  if (p1 != p2) {
+    p2.attr().x += -dx * invR3 * p1->w;
+    p2.attr().y += -dy * invR3 * p1->w;
+    p2.attr().z += -dz * invR3 * p1->w;
+    p2.attr().w += invR * p1->w;
+  }
 }
 // only c1 and c2 can be modified
 static void interact(Tapas::Cell &c1, Tapas::Cell &c2) {
@@ -105,6 +111,7 @@ int main() {
   float4 *sourceHost = new float4 [N];
   float4 *targetHost = new float4 [N];
   //float4 *targetSSE = new float4 [N];
+  srand48(0);
   for( int i=0; i<N; i++ ) {
     sourceHost[i].x = drand48();
     sourceHost[i].y = drand48();
@@ -113,18 +120,18 @@ int main() {
   }
   std::cout << std::scientific << "N      : " << N << std::endl;
 
+
+  float4 *targetTapas = calc_direct(sourceHost, N, 100000);
+#ifdef DUMP
+  std::ofstream ref_out("ref.txt");
+  std::ofstream tapas_out("tapas.txt");
+#endif
+
   double tic = get_time();
   P2P(targetHost,sourceHost,N,N,EPS2);
   double toc = get_time();
 
   std::cout << std::scientific << "No SSE : " << toc-tic << " s : " << OPS / (toc-tic) << " GFlops" << std::endl;
-
-  float4 *targetTapas = calc_direct(sourceHost, N, 100000);
-  std::cerr << "x: " << sourceHost[0].x << std::endl;
-#ifdef DUMP
-  std::ofstream ref_out("ref.txt");
-  std::ofstream tapas_out("tapas.txt");
-#endif
 
 // COMPARE RESULTS
   float pd = 0, pn = 0, fd = 0, fn = 0;
