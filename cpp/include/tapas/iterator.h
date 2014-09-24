@@ -11,7 +11,7 @@
   DIM, FP, BT, BT_ATTR, ATTR
 
 namespace tapas {
-//template <int DIM, class BT, class BT_ATTR, class CellType>
+
 template <class CellType>
 class BodyIterator {
   const CellType &c_;
@@ -101,7 +101,6 @@ class CellIterator {
   }
 }; // class CellIterator
 
-//template <int DIM, class CELL>
 template <class CELL>
 class SubCellIterator {
   const CELL &c_;
@@ -134,6 +133,9 @@ class SubCellIterator {
   }
   template <class T>
   bool operator==(const T &x) const { return false; }
+  bool AllowMutualInteraction(const SubCellIterator &x) const {
+    return c_ == x.c_;
+  }
 }; // class SubCellIterator
 
 
@@ -183,15 +185,14 @@ class ProductIterator {
   }
 }; // class ProductIterator
 
-template <class CELL>
-class ProductIterator<CELL, void> {
+template <class ITER>
+class ProductIterator<ITER, void> {
   index_t idx1_;
   index_t idx2_;
-  typedef BodyIterator<CELL> BITER;
-  BITER t1_;
-  BITER t2_;
+  ITER t1_;
+  ITER t2_;
  public:
-  ProductIterator(const BITER &t1, const BITER &t2):
+  ProductIterator(const ITER &t1, const ITER &t2):
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
     if (t1_.AllowMutualInteraction(t2_)) {
       TAPAS_LOG_ERROR() << "mutual interaction\n";
@@ -212,22 +213,22 @@ class ProductIterator<CELL, void> {
       return t1_.size() * t2_.size();
     }
   }
-  const typename BITER::value_type &first() const {
+  const typename ITER::value_type &first() const {
     return *t1_;
   }
-  typename BITER::value_type &first() {
+  typename ITER::value_type &first() {
     return *t1_;
   }
-  const typename BITER::value_type &second() const {
+  const typename ITER::value_type &second() const {
     return *t2_;
   }
-  typename BITER::value_type &second() {
+  typename ITER::value_type &second() {
     return *t2_;
   }
-  typename BITER::attr_type &attr_first() const {
+  typename ITER::attr_type &attr_first() const {
     return t1_.attr();
   }
-  typename BITER::attr_type &attr_second() const {
+  typename ITER::attr_type &attr_second() const {
     return t2_.attr();
   }
   
@@ -249,11 +250,8 @@ class ProductIterator<CELL, void> {
       idx2_++;
       t2_++;
     }
-    //return *this;
   }
 }; // class ProductIterator
-
-
 
 template <class T1, class T2>
 ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
@@ -263,10 +261,17 @@ ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
 
 
 template <class CELL>
-ProductIterator<CELL> Product(
+ProductIterator<SubCellIterator<CELL >> Product(
+    SubCellIterator<CELL> c1, SubCellIterator<CELL> c2) {
+  TAPAS_LOG_ERROR() << "Product(SubCellIterator, SubCellIterator)" << std::endl;
+  return ProductIterator<SubCellIterator<CELL> >(c1, c2);
+}
+
+template <class CELL>
+ProductIterator<BodyIterator<CELL> > Product(
     BodyIterator<CELL> c1, BodyIterator<CELL> c2) {
   TAPAS_LOG_ERROR() << "Product(BodyIterator, BodyIterator)" << std::endl;
-  return ProductIterator<CELL>(c1, c2);
+  return ProductIterator<BodyIterator<CELL> >(c1, c2);
 }
 
 

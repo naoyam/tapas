@@ -60,8 +60,6 @@ struct HelperNode {
   index_t np;
 };
 
-
-
 template <int DIM, class FP, class BT>
 HelperNode<DIM> *CreateInitialNodes(const typename BT::type *p, index_t np, 
                                     const Region<DIM, FP> &r);
@@ -134,7 +132,6 @@ class Partition;
 template <CELL_TEMPLATE_PARAMS>
 class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   friend class Partition<CELL_TEMPLATE_ARGS>;
-  //friend class BodyIterator<DIM, BT, BT_ATTR, Cell>;
   friend class BodyIterator<Cell>;
  public:
   typedef unordered_map<KeyType, Cell*> HashTable;
@@ -150,20 +147,8 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
       ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
       is_leaf_(true) {}
 
-  //typedef Cell value_type;
   typedef ATTR attr_type;
   typedef BT_ATTR body_attr_type;
-#if 0  
-  Cell &operator*() {
-    return *this;
-  }
-  const Cell &operator++() const {
-    return *this;
-  }
-  const Cell &operator++(int) const {
-    return *this;
-  }
-#endif  
   KeyType key() const { return key_; }
 
   bool operator==(const Cell &c) const;
@@ -180,7 +165,6 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   }
 #endif
   typename BT::type &body(index_t idx) const;
-  //BodyIterator<DIM, BT, BT_ATTR, Cell> bodies() const;
   BodyIterator<Cell> bodies() const;
 #ifdef DEPRECATED
   BT_ATTR *particle_attrs() const {
@@ -188,7 +172,6 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   }
 #endif
   BT_ATTR *body_attrs() const;
-  //SubCellIterator<DIM, Cell> subcells() const;
   SubCellIterator<Cell> subcells() const;
   
  protected:
@@ -551,22 +534,15 @@ BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::body_attr(index_t idx) const {
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-//SubCellIterator<DIM, Cell<CELL_TEMPLATE_ARGS> >
-//Cell<CELL_TEMPLATE_ARGS>::
 SubCellIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
-  //return SubCellIterator<DIM, Cell>(*this);
   return SubCellIterator<Cell>(*this);
 }
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-//BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
 BodyIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
 bodies() const {
-  //return BodyIterator<DIM, BT, BT_ATTR, Cell<CELL_TEMPLATE_ARGS>
-  //>(*this);
-  TAPAS_LOG_DEBUG() << "Body iterator" << std::endl;
   return BodyIterator<Cell<CELL_TEMPLATE_ARGS> >(*this);
 }
 
@@ -590,7 +566,6 @@ Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
   typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
-  //auto *root = new Cell<CELL_TEMPLATE_ARGS>(r, 0, nb, root_key);
   auto *root = new CELL_T(r, 0, nb, root_key, *ht, b, attrs);
   ht->insert(std::make_pair(root_key, root));
   Refine(root, hn, b, 0, 0);
@@ -659,9 +634,8 @@ ProductIterator<T1, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > > Product(
 
 template <CELL_TEMPLATE_PARAMS>
 ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > >
-Product(
-    hot::Cell<CELL_TEMPLATE_ARGS> &c1,
-    hot::Cell<CELL_TEMPLATE_ARGS> &c2) {
+Product(hot::Cell<CELL_TEMPLATE_ARGS> &c1,
+        hot::Cell<CELL_TEMPLATE_ARGS> &c2) {
   TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
   typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
   typedef CellIterator<CellType> CellIterType;

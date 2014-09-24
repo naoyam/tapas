@@ -70,7 +70,7 @@ typedef tapas::Tapas<DIM, float, BodyInfo,
 
 static void direct(Tapas::BodyIterator &p1, Tapas::BodyIterator &p2, float eps2) {
   float dx = p2->x - p1->x;
-  std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
+  //std::cerr << "x: " << p1->x << ", " << p2->x << std::endl;
   float dy = p2->y - p1->y;
   float dz = p2->z - p1->z;
   float R2 = dx * dx + dy * dy + dz * dz + eps2;
@@ -104,7 +104,7 @@ float4 *calc_direct(float4 *p, size_t np, int s) {
   // PartitionBSP is a function that partitions the given set of
   // particles by the binary space partitioning. The result is a
   // octree for 3D particles and a quadtree for 2D particles.
-  tapas::Region<3, float> r(tapas::Vec<3, float>(0.0, 0.0, 0.0), tapas::Vec<3, float>(1.0, 1.0, 1.0));
+  Tapas::Region r(Tapas::Vec3(0.0, 0.0, 0.0), Tapas::Vec3(1.0, 1.0, 1.0));
   Tapas::Cell *root = Tapas::Partition(p, np, r, s);
   tapas::Map(interact, tapas::Product(*root, *root));
   return root->body_attrs();
