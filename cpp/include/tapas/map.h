@@ -39,6 +39,12 @@ void Map(void (*f)(T &, Args...), T_Iter iter, Args...args) {
   }
 }
 
+template <class T, class... Args>
+void Map(void (*f)(T &, Args...), T x, Args...args) {
+  TAPAS_LOG_DEBUG() << "map non-iterator" << std::endl;
+  f(x, args...);
+}
+
 } // namespace tapas
 
 #endif // TAPAS_MAP_H_
