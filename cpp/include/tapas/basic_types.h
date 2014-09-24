@@ -68,8 +68,17 @@ class Region {
     }
     return PartitionBSP(p);
   }
-#endif  
+#endif
+  std::ostream &Print(std::ostream &os) const {
+    os << "{" << min_ << ", " << max_ << "}";
+    return os;
+  }
 };
+
+template <int DIM, class FP>
+std::ostream &operator<<(std::ostream &os, const Region<DIM, FP> &r) {
+  return r.Print(os);
+}
 
 template <int DIM, class FP, int OFFSET>
 struct ParticlePosOffset {

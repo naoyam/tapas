@@ -126,16 +126,17 @@ int main() {
 
 
   float4 *targetTapas = calc_direct(sourceHost, N, S);
-#ifdef DUMP
-  std::ofstream ref_out("ref.txt");
-  std::ofstream tapas_out("tapas.txt");
-#endif
-
+  
   double tic = get_time();
   P2P(targetHost,sourceHost,N,N,EPS2);
   double toc = get_time();
 
   std::cout << std::scientific << "No SSE : " << toc-tic << " s : " << OPS / (toc-tic) << " GFlops" << std::endl;
+
+#ifdef DUMP
+  std::ofstream ref_out("ref.txt");
+  std::ofstream tapas_out("tapas.txt");
+#endif
 
 // COMPARE RESULTS
   float pd = 0, pn = 0, fd = 0, fn = 0;

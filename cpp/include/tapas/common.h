@@ -37,26 +37,26 @@ void Exit(int status, const char *file, const char *func, int line) {
 class NONE {};
 
 class StringJoin {
-  const std::string sep;
-  bool first;
-  std::ostringstream ss;
+  const std::string sep_;
+  bool first_;
+  std::ostringstream ss_;
  public:
-  StringJoin(const string &sep=", "): sep(sep), first(true) {}
+  StringJoin(const string &sep=", "): sep_(sep), first_(true) {}
   void append(const string &s) {
-    if (!first) ss << sep;
-    ss << s;
-    first = false;
+    if (!first_) ss_ << sep_;
+    ss_ << s;
+    first_ = false;
   }
         
   template <class T>
   std::ostringstream &operator<< (const T &s) {
-    if (!first) ss << sep;
-    ss << s;
-    first = false;
-    return ss;
+    if (!first_) ss_ << sep_;
+    ss_ << s;
+    first_ = false;
+    return ss_;
   }
   std::string get() const {
-    return ss.str();
+    return ss_.str();
   }
   std::string str() const {
     return get();

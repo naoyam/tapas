@@ -157,8 +157,7 @@ class Vec {
     for (int i = 0; i < DIM; ++i) {
       sj << x_[i];
     }
-    os << sj;
-    return os;
+    return os << sj;
   }
 };
 
