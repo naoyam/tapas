@@ -133,10 +133,6 @@ static void interact(Tapas::Cell &c1, Tapas::Cell &c2, real_t theta) {
     std::cerr << "c2: " << c2.key() << std::endl;
     std::cerr << "r2: " << distR2(c2.attr(), p1) << std::endl;
     real_t d = std::sqrt(distR2(c2.attr(), p1));
-    std::cerr << "c2 region min: " << c2.region().min(2) << std::endl;
-    std::cerr << "c2 region min: " << c2.region().max(0) << std::endl;
-    std::cerr << "c2 region min: " << c2.region().max(1) << std::endl;
-    std::cerr << "c2 region min: " << c2.region().max(2) << std::endl;        
     std::cerr << "c2 region: " << c2.region() << std::endl;
     real_t s = c2.width(0);
 #ifdef DISABLE_APPROXIMATION
