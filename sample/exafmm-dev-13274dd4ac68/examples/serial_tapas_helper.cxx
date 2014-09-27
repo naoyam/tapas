@@ -30,7 +30,7 @@ static inline void FMM_P2M(Tapas::Cell &c, real_t theta) {
 }
 
 static inline void FMM_L2P(Tapas::Cell &c) {
-  tapas_kernel::L2L(c);
+  if (!c.IsRoot()) tapas_kernel::L2L(c);
   if (c.IsLeaf()) {
 #if 0    
     tapas_kernel::L2P(c);

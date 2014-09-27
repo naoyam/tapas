@@ -273,10 +273,27 @@ HelperNode<DIM> *CreateInitialNodes(
     off /= pitch;
     for (int d = 0; d < DIM; ++d) {
       node.anchor[d] = (int)(off[d]);
+      // assume maximum boundary is inclusive, i.e., a particle can be
+      // right at the maximum boundary. anchor 
+      if (node.anchor[d] == (1 << MAX_DEPTH)) {
+        TAPAS_LOG_DEBUG() << "Particle located at max boundary." << std::endl;
+        node.anchor[d]--;
+      }
     }
 #ifdef TAPAS_DEBUG
     assert(node.anchor >= 0);
+#if 1   
+    if (!(node.anchor < (1 << MAX_DEPTH))) {
+      TAPAS_LOG_ERROR() << "Anchor, " << node.anchor
+                        << ", exceeds the maximum depth." << std::endl
+                        << "Particle at "
+                        << ParticlePosOffset<DIM, FP, BT::pos_offset>::vec((const void*)&(p[i]))
+                        << std::endl;
+      TAPAS_DIE();
+    }
+#else
     assert(node.anchor < (1 << MAX_DEPTH));
+#endif
 #endif // TAPAS_DEBUG
     
     node.key = CalcFinestMortonKey<DIM>(node.anchor);

@@ -62,6 +62,7 @@ Region tr;
     bounds = boundBox.getBounds(bodies);
 #ifdef TAPAS    
     asn(tr, bounds);
+    TAPAS_LOG_DEBUG() << "Bounding box: " << tr << std::endl;
 #endif    
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
@@ -73,6 +74,7 @@ Region tr;
     Tapas::Cell *root = Tapas::Partition(
         bodies.data(), args.numBodies, tr, args.ncrit);
     tapas::Map(FMM_P2M, *root, args.theta);
+    TAPAS_LOG_DEBUG() << "P2M done\n";
 #endif
 
 #ifndef TAPAS    
@@ -89,6 +91,7 @@ Region tr;
     //tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual,
     //args.nspawn);
     tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
+    TAPAS_LOG_DEBUG() << "M2L done\n";
     jbodies = bodies;
 #endif    
 
@@ -96,6 +99,7 @@ Region tr;
     upDownPass.downwardPass(cells);
 #else
     tapas::Map(FMM_L2P, *root);
+    TAPAS_LOG_DEBUG() << "L2P done\n";
 #endif    
     
     logger::printTitle("Total runtime");

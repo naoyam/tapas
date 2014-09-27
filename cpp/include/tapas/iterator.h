@@ -197,7 +197,7 @@ class ProductIterator<ITER, void> {
   ProductIterator(const ITER &t1, const ITER &t2):
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
     if (t1_.AllowMutualInteraction(t2_)) {
-      TAPAS_LOG_ERROR() << "mutual interaction\n";
+      TAPAS_LOG_DEBUG() << "mutual interaction\n";
 #if 0 // No self interaction     
       idx2_ = 1;
       t2_.rewind(idx2_);      
@@ -257,7 +257,7 @@ class ProductIterator<ITER, void> {
 
 template <class T1, class T2>
 ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
-  TAPAS_LOG_ERROR() << "Product(X, X)" << std::endl;  
+  TAPAS_LOG_DEBUG() << "Product(X, X)" << std::endl;  
   return ProductIterator<T1, T2>(t1, t2);
 }
 
@@ -265,14 +265,14 @@ ProductIterator<T1, T2> Product(T1 t1, T2 t2) {
 template <class CELL>
 ProductIterator<SubCellIterator<CELL >> Product(
     SubCellIterator<CELL> c1, SubCellIterator<CELL> c2) {
-  TAPAS_LOG_ERROR() << "Product(SubCellIterator, SubCellIterator)" << std::endl;
+  TAPAS_LOG_DEBUG() << "Product(SubCellIterator, SubCellIterator)" << std::endl;
   return ProductIterator<SubCellIterator<CELL> >(c1, c2);
 }
 
 template <class CELL>
 ProductIterator<BodyIterator<CELL> > Product(
     BodyIterator<CELL> c1, BodyIterator<CELL> c2) {
-  TAPAS_LOG_ERROR() << "Product(BodyIterator, BodyIterator)" << std::endl;
+  TAPAS_LOG_DEBUG() << "Product(BodyIterator, BodyIterator)" << std::endl;
   return ProductIterator<BodyIterator<CELL> >(c1, c2);
 }
 
