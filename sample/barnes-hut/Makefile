@@ -1,5 +1,5 @@
-#CXX = clang++ -std=c++11 -stdlib=libc++ 
-CXX = clang++ -std=c++11 -fcolor-diagnostics
+CXX = clang++ -std=c++11 -stdlib=libc++ -fcolor-diagnostics 
+#CXX = clang++ -std=c++11 -fcolor-diagnostics 
 #CXX = g++ -std=c++11
 
 CXX += -O0 -g3 -Wall -fno-elide-constructors

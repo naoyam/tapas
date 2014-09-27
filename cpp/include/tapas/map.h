@@ -28,9 +28,10 @@ void Map(void (*f)(T1 &, T1 &, Args...),
   }
 }
 
-
-template <class T, class T_Iter, class... Args>
-void Map(void (*f)(T &, Args...), T_Iter iter, Args...args) {
+#if 0
+// TODO: Why this fails to compile?
+template <class T, class Iter, class... Args>
+void Map(void (*f)(T &, Args...), Iter<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product iterator size: "
                     << iter.size() << std::endl;  
   for (unsigned i = 0; i < iter.size(); ++i) {
@@ -38,6 +39,26 @@ void Map(void (*f)(T &, Args...), T_Iter iter, Args...args) {
     iter++;
   }
 }
+#else
+template <class T, class... Args>
+void Map(void (*f)(T &, Args...), SubCellIterator<T> iter, Args...args) {
+  TAPAS_LOG_DEBUG() << "map non-product subcell iterator size: "
+                    << iter.size() << std::endl;  
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(*iter, args...);
+    iter++;
+  }
+}
+template <class T, class... Args>
+void Map(void (*f)(T &, Args...), BodyIterator<T> iter, Args...args) {
+  TAPAS_LOG_DEBUG() << "map non-product body iterator size: "
+                    << iter.size() << std::endl;  
+  for (unsigned i = 0; i < iter.size(); ++i) {
+    f(*iter, args...);
+    iter++;
+  }
+}
+#endif
 
 template <class T, class... Args>
 void Map(void (*f)(T &, Args...), T &x, Args...args) {
