@@ -96,8 +96,7 @@ class CellIterator {
   }
   template <class T>
   bool operator==(const T &) const { return false; }
-  void rewind(int idx) {
-  }
+  void rewind(int ) {}
   int size() const {
     return 1;
   }
@@ -134,7 +133,7 @@ class SubCellIterator {
     return c_ == x.c_;
   }
   template <class T>
-  bool operator==(const T &x) const { return false; }
+  bool operator==(const T &) const { return false; }
   bool AllowMutualInteraction(const SubCellIterator &x) const {
     return c_ == x.c_;
   }

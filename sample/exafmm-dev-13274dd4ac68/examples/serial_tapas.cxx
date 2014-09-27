@@ -28,6 +28,16 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Traversal traversal(args.nspawn, args.images);
+  if (args.useRmax) {
+    std::cerr << "Rmax not supported." << std::endl;
+    std::cerr << "Use --useRmax 0 option." << std::endl;
+    exit(1);
+  }
+  if (args.useRopt) {
+    std::cerr << "Ropt not supported." << std::endl;
+    std::cerr << "Use --useRopt 0 option." << std::endl;
+    exit(1);
+  }
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
@@ -73,8 +83,24 @@ Region tr;
 #else    
     Tapas::Cell *root = Tapas::Partition(
         bodies.data(), args.numBodies, tr, args.ncrit);
+#if 0
+    {
+      std::ofstream tapas_out("tapas_0.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << root->body_attrs()[i] << std::endl;
+      }
+    }
+#endif    
     tapas::Map(FMM_P2M, *root, args.theta);
     TAPAS_LOG_DEBUG() << "P2M done\n";
+#if 0
+    {
+      std::ofstream tapas_out("tapas_P2M.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << root->body_attrs()[i] << std::endl;
+      }
+    }
+#endif    
 #endif
 
 #ifndef TAPAS    
@@ -86,13 +112,21 @@ Region tr;
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
 #endif
-#else
-    //tapas::Map<3, real_t, Body, 0, kvec4, CellAttr, TapasCell, TapasCell, bool, int>(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
-    //tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual,
-    //args.nspawn);
+#else // TAPAS
+    numM2L = 0; numP2P = 0;
     tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
     TAPAS_LOG_DEBUG() << "M2L done\n";
+    std::cerr << "M2L calls: " << numM2L << std::endl;
+    std::cerr << "P2P calls: " << numP2P << std::endl;    
     jbodies = bodies;
+#if 0
+    {
+      std::ofstream tapas_out("tapas_M2L.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << root->body_attrs()[i] << std::endl;
+      }
+    }
+#endif    
 #endif    
 
 #ifndef TAPAS    
@@ -100,7 +134,30 @@ Region tr;
 #else
     tapas::Map(FMM_L2P, *root);
     TAPAS_LOG_DEBUG() << "L2P done\n";
+#if 0
+    {
+      std::ofstream tapas_out("tapas_L2P.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << root->body_attrs()[i] << std::endl;
+      }
+    }
 #endif    
+#endif
+
+#ifdef TAPAS
+    CopyBackResult(bodies, root->body_attrs(), args.numBodies);
+#if 0
+    {
+      std::ofstream tapas_out("tapas_final.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << bodies[i].TRG << std::endl;
+        //tapas_out << root->body_attrs()[i] << std::endl;
+      }
+    }
+#endif    
+#endif
+
+    
     
     logger::printTitle("Total runtime");
     logger::stopPAPI();

@@ -47,7 +47,7 @@ LFLAGS	+= -DFP64 # Use double precision
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
+LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
 
 ### Thread model flags
 #LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
@@ -80,6 +80,8 @@ OBJECTS	= $(SOURCES:.cxx=.o)
 endif
 
 MAKEFLAGS += --no-print-directory
+
+CXX += -DTAPAS_LOG_LEVEL=0 -DTAPAS_DEBUG=0
 
 .c.o	:
 	$(CXX) -c $< -o $@ $(LFLAGS)

@@ -55,10 +55,19 @@ class Cell {
   FP width(int d) const {
     return region_.width(d);
   }
+  Vec<DIM, FP> width() const {
+    return region_.width();
+  }
+  FP center(int d) const {
+    return region_.min(d) + width(d) / 2;
+  }
+  Vec<DIM, FP> center() const {
+    return region_.min() + width() / 2;
+  }
   
   bool operator==(const Cell &c) const;
   template <class T>
-  bool operator==(const T &x) const { return false; }
+  bool operator==(const T &) const { return false; }
   
   // Iterator interface (to be obsoleted)
 #if 0  

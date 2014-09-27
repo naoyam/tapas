@@ -8,6 +8,11 @@
 
 namespace tapas {
 
+template <class FP, class T>
+FP REAL(const T &x) {
+  return (FP)x;
+}   
+
 template <int DIM, class FP>
 class Region {
  private:
@@ -44,6 +49,9 @@ class Region {
   }
   FP width(int d) const {
     return max_[d] - min_[d];
+  }
+  const Vec<DIM, FP> width() const {
+    return max_ - min_;
   }
   
   Region PartitionBSP(int pos) const {

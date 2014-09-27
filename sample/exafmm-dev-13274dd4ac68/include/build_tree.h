@@ -237,6 +237,7 @@ private:
     void operator() () {                                        // Overload operator()
       C->IPARENT = iparent;                                     //  Index of parent cell
       C->R       = R0 / (1 << level);                           //  Cell radius
+      //std::cerr << "R: " << C->R << std::endl;
       C->X       = octNode->X;                                  //  Cell center
       C->NBODY   = octNode->NBODY;                              //  Number of decendant bodies
       C->IBODY   = octNode->IBODY;                              //  Index of first body in cell

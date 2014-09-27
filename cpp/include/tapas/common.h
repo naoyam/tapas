@@ -7,7 +7,15 @@
 #include <cassert>
 #include <iostream>
 
+#ifdef TAPAS_DEBUG
+#if TAPAS_DEBUG == 0
+#undef TAPAS_DEBUG
+#else
 #define TAPAS_DEBUG
+#endif
+#else  // TAPAS_DEBUG
+#define TAPAS_DEBUG // default
+#endif // TAPAS_DEBUG
 
 namespace tapas {
 

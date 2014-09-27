@@ -100,6 +100,33 @@ class Vec {
     return x;
   }
 
+  Vec operator/(const FP &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] /= v;
+    }
+    return x;
+  }
+
+  template <class T>
+  Vec operator/(const T &v) const {
+    Vec x(*this);
+    FP c = (FP)v;
+    for (int i = 0; i < DIM; ++i) {
+      x[i] /= c;
+    }
+    return x;
+  }
+  
+  Vec operator/(const Vec &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] /= v[i];
+    }
+    return x;
+  }
+
+  
   Vec operator+(const FP &v) const {
     Vec x(*this);
     for (int i = 0; i < DIM; ++i) {
@@ -107,6 +134,15 @@ class Vec {
     }
     return x;
   }
+
+  Vec operator+(const Vec &v) const {
+    Vec x(*this);
+    for (int i = 0; i < DIM; ++i) {
+      x[i] += v[i];
+    }
+    return x;
+  }
+  
 
   Vec operator-(const FP &v) const {
     Vec x(*this);

@@ -80,6 +80,19 @@ private:
       else kernel::M2M(C, C0);                                  //  M2M kernel
       if (useRmax) setRmax();                                   //  Redefine cell radius R based on maximum distance
       C->R /= theta;                                            //  Divide R by theta
+#if 1
+      {
+        if (C->NCHILD == 0) {
+          std::ofstream out("ref_p2m_c.txt", std::ofstream::app);
+          out << "C: " << C->X << std::endl;
+          out << "M: " << C->M << std::endl;
+          out << "L: " << C->L << std::endl;
+          out << "R: " << C->R << std::endl;
+          out << "nb: " << C->NBODY << std::endl;
+        }
+      }
+#endif
+      
     }                                                           // End overload operator()
   };
 
@@ -118,6 +131,8 @@ public:
   //! Upward pass (P2M, M2M)
   void upwardPass(Cells & cells) {
     logger::startTimer("Upward pass");                          // Start timer
+    std::ofstream out("ref_p2m_c.txt");
+    out.close();
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
       PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
@@ -128,7 +143,8 @@ public:
 	setRopt();                                              //   Error optimization of R
       }                                                         //  End if for using error optimized theta
     }                                                           // End if for empty cell vector
-    logger::stopTimer("Upward pass");                           // Stop timer
+    logger::stopTimer("Upward pass");                           // Stop
+                                                                // timer
   }
 
   //! Downward pass (L2L, L2P)

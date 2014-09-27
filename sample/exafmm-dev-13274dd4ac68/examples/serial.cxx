@@ -49,6 +49,7 @@ int main(int argc, char ** argv) {
     logger::startPAPI();
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
+    std::cerr << "Bounding box: " << bounds.Xmin << "->" << bounds.Xmax << std::endl;
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
@@ -61,6 +62,14 @@ int main(int argc, char ** argv) {
 #else
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
+#if 1
+    {
+      std::ofstream tapas_out("ref_M2L.txt");    
+      for (int i = 0; i < args.numBodies; ++i) {
+        tapas_out << bodies[i].TRG << std::endl;
+      }
+    }
+#endif    
 #endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");

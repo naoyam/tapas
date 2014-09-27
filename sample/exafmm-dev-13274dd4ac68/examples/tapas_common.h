@@ -6,7 +6,6 @@
 #include "tapas.h"
 
 struct CellAttr {
-  vec3 X;
   real_t R;
   vecP M;
   vecP L;

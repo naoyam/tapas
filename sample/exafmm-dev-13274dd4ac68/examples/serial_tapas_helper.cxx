@@ -1,11 +1,20 @@
 
+int numM2L;
+int numP2P;
 
 template <int DIM, class FP> inline
-tapas::Vec<DIM, FP> &asn(tapas::Vec<DIM, FP> &x, const vec<DIM, FP> &y) {
+tapas::Vec<DIM, FP> &asn(tapas::Vec<DIM, FP> &dst, const vec<DIM, FP> &src) {
   for (int i = 0; i < DIM; ++i) {
-    x[i] = y[i];
+    dst[i] = src[i];
   }
-  return x;
+  return dst;
+}
+template <int DIM, class FP> inline
+vec<DIM, FP> &asn(vec<DIM, FP> &dst, const tapas::Vec<DIM, FP> &src) {
+  for (int i = 0; i < DIM; ++i) {
+    dst[i] = src[i];
+  }
+  return dst;
 }
 
 static Region &asn(Region &x, const Bounds &y) {
@@ -26,17 +35,18 @@ static inline void FMM_P2M(Tapas::Cell &c, real_t theta) {
   } else {
     tapas_kernel::M2M(c);
   }
+  for (int i = 0; i < 3; ++i) {
+    c.attr().R = std::max(c.width(i), c.attr().R);
+  }
+  c.attr().R = c.attr().R / 2 * 1.00001; // see bounds2box func
   c.attr().R /= theta;
 }
 
 static inline void FMM_L2P(Tapas::Cell &c) {
+  if (c.nb() == 0) return;
   if (!c.IsRoot()) tapas_kernel::L2L(c);
   if (c.IsLeaf()) {
-#if 0    
-    tapas_kernel::L2P(c);
-#else
     tapas::Map(tapas_kernel::L2P, c.bodies());
-#endif    
   } else {
     tapas::Map(FMM_L2P, c.subcells());
   }
@@ -80,28 +90,35 @@ static inline void tapas_splitCell(Tapas::Cell &Ci, Tapas::Cell &Cj, int mutual,
 }
 
 static inline void FMM_M2L(Tapas::Cell &Ci, Tapas::Cell &Cj, int mutual, int nspawn) {
-  //static inline void FMM_M2L(TapasCell &Ci, TapasCell &Cj, int mutual) {
-  vec3 dX = Ci.attr().X - Cj.attr().X;
+  //static inline void FMM_M2L(TapasCell &Ci, TapasCell &Cj, int
+  //mutual) {
+  if (Ci.nb() == 0 || Cj.nb() == 0) return;
+  vec3 dX;
+  asn(dX, Ci.center() - Cj.center());
   real_t R2 = norm(dX);
   vec3 Xperiodic = 0; // dummy; periodic not ported
+  if (R2 > (Ci.attr().R+Cj.attr().R) * (Ci.attr().R+Cj.attr().R)) {
+    //std::cerr << "R2 Y: " << R2 << " vs " << (Ci.attr().R+Cj.attr().R) * (Ci.attr().R+Cj.attr().R) << std::endl;
+  } else {
+    //std::cerr << "R2: " << R2 << " vs " << (Ci.attr().R+Cj.attr().R) * (Ci.attr().R+Cj.attr().R) << std::endl;
+  }
   if (R2 > (Ci.attr().R+Cj.attr().R) * (Ci.attr().R+Cj.attr().R)) {                   // If distance is far enough
+    //std::cerr << "M2L approx\n";
+    numM2L++;
     tapas_kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
   } else if (Ci.IsLeaf() && Cj.IsLeaf()) {            // Else if both cells are bodies
-    if (Cj.nb() == 0) {                                     //  If the bodies weren't sent from remote node
-      tapas_kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
-    } else {                                                  //  Else if the bodies were sent
-#if 0
-      if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
-        tapas_kernel::P2P(Ci);                                      //    P2P kernel for single cell
-      } else {                                                //   Else if source and target are different
-        tapas_kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
-      }                                                       //   End if for same source and target
-#else
-      tapas::Map(tapas_kernel::P2P, tapas::Product(Ci.bodies(), Cj.bodies()),
-                Xperiodic);
-#endif
-    }                                                         //  End if for bodies
+    tapas::Map(tapas_kernel::P2P, tapas::Product(Ci.bodies(), Cj.bodies()),
+               Xperiodic);
+    numP2P++;
   } else {                                                    // Else if cells are close but not bodies
     tapas_splitCell(Ci, Cj, mutual, nspawn);             //  Split cell and call function recursively for child
   }                                                           // End if for multipole acceptance
+}
+
+static inline void CopyBackResult(Bodies &body, const kvec4 *trg,
+                                  int num_bodies) {
+  // greedy ad-hoc copying
+  for (int i = 0; i < num_bodies; ++i) {
+    body[i].TRG = trg[i];
+  }
 }

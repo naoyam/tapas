@@ -5,7 +5,31 @@
 
 namespace {
 
-const complex_t I(0.,1.);                                       // Imaginary unit
+const complex_t I(0.,1.);                                       // Imaginary
+                                                                // unit
+template <int DIM, class FP> inline
+tapas::Vec<DIM, FP> &asn(tapas::Vec<DIM, FP> &dst, const vec<DIM, FP> &src) {
+  for (int i = 0; i < DIM; ++i) {
+    dst[i] = src[i];
+  }
+  return dst;
+}
+template <int DIM, class FP> inline
+vec<DIM, FP> &asn(vec<DIM, FP> &dst, const tapas::Vec<DIM, FP> &src) {
+  for (int i = 0; i < DIM; ++i) {
+    dst[i] = src[i];
+  }
+  return dst;
+}
+
+template <int DIM, class FP> inline
+vec<DIM, FP> tovec(const tapas::Vec<DIM, FP> &src) {
+  vec<DIM, FP> dst;
+  for (int i = 0; i < DIM; ++i) {
+    dst[i] = src[i];
+  }
+  return dst;
+}
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t & r, real_t & theta, real_t & phi, vec3 dX) {
@@ -106,7 +130,7 @@ void tapas_kernel::P2M(Tapas::Cell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (tapas::index_t i = 0; i < C.nb(); ++i) {
     const Body &B = C.body(i);
-    vec3 dX = B.X - C.attr().X;
+    vec3 dX = B.X - tovec(C.center());
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
     evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
@@ -124,7 +148,9 @@ void tapas_kernel::M2M(Tapas::Cell & C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (int i = 0; i < C.nsubcells(); ++i) {
     Tapas::Cell &Cj=C.subcell(i);
-    vec3 dX = C.attr().X - Cj.attr().X;
+    // Skip empty cell
+    if (Cj.nb() == 0) continue;
+    vec3 dX = tovec(C.center() - Cj.center());
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
     evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
@@ -153,10 +179,18 @@ void tapas_kernel::M2M(Tapas::Cell & C) {
 
 void tapas_kernel::M2L(Tapas::Cell &Ci, Tapas::Cell &Cj, vec3 Xperiodic, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
-  vec3 dX = Ci.attr().X - Cj.attr().X - Xperiodic;
+  //vec3 dX = Ci.attr().X - Cj.attr().X - Xperiodic;
+  vec3 dX;
+  asn(dX, Ci.center() - Cj.center());
+  dX -= Xperiodic;
+  //std::cerr << "dx: " << dX << std::endl;  
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);
+  // std::cerr  << "rho: " << rho << ", alpha: " << alpha << ", beta: " << beta << std::endl;
   evalLocal(rho, alpha, beta, Ynmi);
+  for (int i = 0; i < P*P; ++i) {
+    // std::cerr << "tapas_kernel::M2L Y: " << Ynmi[i] << std::endl;
+  }
   if (mutual) evalLocal(rho, alpha+M_PI, beta, Ynmj);
   for (int j=0; j<P; j++) {
 #if MASS
@@ -176,10 +210,13 @@ void tapas_kernel::M2L(Tapas::Cell &Ci, Tapas::Cell &Cj, vec3 Xperiodic, bool mu
       for (int n=0; n<P-j; n++)
 #endif
       {
+
         for (int m=-n; m<0; m++) {
           int nms  = n * (n + 1) / 2 - m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
           Li += std::conj(Cj.attr().M[nms]) * Cnm * Ynmi[jnkm];
+          //std::cerr << "M: " << Cj.attr().M[nms] << std::conj(Cj.attr().M[nms]) << std::endl;
+          //std::cerr << "Y: " << Ynmi[jnkm] << std::endl;
           if (mutual) Lj += std::conj(Ci.attr().M[nms]) * Cnm * Ynmj[jnkm];
         }
         for (int m=0; m<=n; m++) {
@@ -187,10 +224,12 @@ void tapas_kernel::M2L(Tapas::Cell &Ci, Tapas::Cell &Cj, vec3 Xperiodic, bool mu
           int jnkm = (j + n) * (j + n) + j + n + m - k;
           real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
           Li += Cj.attr().M[nms] * Cnm2 * Ynmi[jnkm];
+          //std::cerr << "M: " << Cj.attr().M[nms] << std::conj(Cj.attr().M[nms]) << std::endl;
           if (mutual) Lj += Ci.attr().M[nms] * Cnm2 * Ynmj[jnkm];
         }
       }
       Ci.attr().L[jks] += Li;
+      //std::cerr << "Li: " << Li << std::endl;
       if (mutual) Cj.attr().L[jks] += Lj;
     }
   }
@@ -239,7 +278,7 @@ void tapas_kernel::L2P(Tapas::Cell &C) {
 void tapas_kernel::L2P(Tapas::BodyIterator &B) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   const Tapas::Cell &C = B.cell();
-  vec3 dX = B->X - C.attr().X;
+  vec3 dX = B->X - tovec(C.center());
   vec3 spherical = 0;
   vec3 cartesian = 0;
   real_t r, theta, phi;
@@ -275,7 +314,7 @@ void tapas_kernel::L2P(Tapas::BodyIterator &B) {
 void tapas_kernel::L2L(Tapas::Cell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   const Tapas::Cell &Cj = C.parent();
-  vec3 dX = C.attr().X - Cj.attr().X;
+  vec3 dX = tovec(C.center() - Cj.center());
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);
   evalMultipole(rho, alpha, beta, Ynm, YnmTheta);

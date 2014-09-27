@@ -135,11 +135,11 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   typedef unordered_map<KeyType, Cell*> HashTable;
  protected:
   KeyType key_;
-  HashTable ht_;
+  HashTable *ht_;
  public:
 
   Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
-       KeyType key, HashTable &ht,
+       KeyType key, HashTable *ht,
        typename BT::type *bodies, BT_ATTR *body_attrs):
       tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
       ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
@@ -151,7 +151,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
 
   bool operator==(const Cell &c) const;
   template <class T>
-  bool operator==(const T &x) const { return false; }
+  bool operator==(const T &) const { return false; }
   bool IsRoot() const;
   bool IsLeaf() const;
   int nsubcells() const;
@@ -174,7 +174,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   
  protected:
   BT_ATTR &body_attr(index_t idx) const;
-  HashTable &ht() { return ht_; }
+  HashTable *ht() { return ht_; }
   Cell *Lookup(KeyType k) const;
   typename BT::type *bodies_;
   BT_ATTR *body_attrs_;
@@ -508,8 +508,8 @@ Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) const {
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
 Cell<CELL_TEMPLATE_ARGS> *Cell<CELL_TEMPLATE_ARGS>::Lookup(
     KeyType k) const {
-  auto i = ht_.find(k);
-  if (i != ht_.end()) {
+  auto i = ht_->find(k);
+  if (i != ht_->end()) {
     return i->second;
   } else {
     return NULL;
@@ -580,7 +580,7 @@ Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
   typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
-  auto *root = new CELL_T(r, 0, nb, root_key, *ht, b, attrs);
+  auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
   ht->insert(std::make_pair(root_key, root));
   Refine(root, hn, b, 0, 0);
   
@@ -594,13 +594,13 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
                                            const typename BT::type *b,
                                            int cur_depth,
                                            KeyType cur_key) const {
-  TAPAS_LOG_DEBUG() << "Current depth: " << cur_depth << std::endl;
+  TAPAS_LOG_INFO() << "Current depth: " << cur_depth << std::endl;
   if (c->nb() <= max_nb_) {
-    TAPAS_LOG_DEBUG() << "Small enough cell" << std::endl;
+    TAPAS_LOG_INFO() << "Small enough cell" << std::endl;
     return;
   }
   if (cur_depth >= MAX_DEPTH) {
-    TAPAS_LOG_DEBUG() << "Reached maximum depth" << std::endl;
+    TAPAS_LOG_INFO() << "Reached maximum depth" << std::endl;
     return;
   }
   KeyType child_key = MortonKeyFirstChild<DIM>(cur_key);
@@ -615,9 +615,11 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
     auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
         child_r, cur_offset, child_bn, child_key, c->ht(),
         c->bodies_, c->body_attrs_);
-    c->ht().insert(std::make_pair(child_key, child_cell));
+    c->ht()->insert(std::make_pair(child_key, child_cell));
     TAPAS_LOG_DEBUG() << "Particles: \n";
+#ifdef TAPAS_DEBUG    
     tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
+#endif    
     Refine(child_cell, hn, b, cur_depth+1, child_key);
     child_key = hot::CalcMortonKeyNext<DIM>(child_key);
     cur_offset = cur_offset + child_bn;

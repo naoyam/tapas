@@ -36,7 +36,9 @@ private:
   void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
+    std::cerr << "R2: " << R2 << " vs " << (Ci->R+Cj->R) * (Ci->R+Cj->R) << std::endl;
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
+      //std::cerr << "periodic: " << Xperiodic << std::endl;
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
       countKernel(numM2L);                                      //  Increment M2L counter
       countWeight(Ci, Cj, mutual, remote);                      //  Increment M2L weight
@@ -141,7 +143,8 @@ private:
                     Xperiodic[0] = (ix * 3 + cx) * cycle;       //         Coordinate offset for x periodic direction
                     Xperiodic[1] = (iy * 3 + cy) * cycle;       //         Coordinate offset for y periodic direction
                     Xperiodic[2] = (iz * 3 + cz) * cycle;       //         Coordinate offset for z periodic direction
-		    kernel::M2L(Ci0, Ci, Xperiodic, false);     //         M2L kernel
+                    std::cerr << "M2L periodic approx\n";
+                    kernel::M2L(Ci0, Ci, Xperiodic, false);     //         M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
               }                                                 //      End loop over x periodic direction (child)
@@ -336,11 +339,11 @@ public:
 #if COUNT
     if (logger::verbose) {                                      // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
-		<< std::setw(stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left         //  Set format
 		<< "P2P calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numP2P << std::endl                          //  Print number of P2P calls
-		<< std::setw(stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left         //  Set format
 		<< "M2L calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numM2L << std::endl;                         //  Print number of M2L calls
