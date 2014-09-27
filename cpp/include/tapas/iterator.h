@@ -39,9 +39,11 @@ class BodyIterator {
   typename CellType::BODY_ATTR &attr() const {
     return c_.body_attr(idx_);
   }
+#if 0  
   CellType &cell() {
     return c_;
   }
+#endif  
   const CellType &cell() const {
     return c_;
   }
@@ -58,7 +60,7 @@ class BodyIterator {
     return !operator==(x);
   }
   template <class T>
-  bool operator==(const T &x) const { return false; }
+  bool operator==(const T &) const { return false; }
   bool AllowMutualInteraction(const BodyIterator &x) const {
     return c_ == x.c_;
   }
@@ -93,7 +95,7 @@ class CellIterator {
     return c_ == x.c_;
   }
   template <class T>
-  bool operator==(const T &x) const { return false; }
+  bool operator==(const T &) const { return false; }
   void rewind(int idx) {
   }
   int size() const {

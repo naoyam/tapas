@@ -1,7 +1,9 @@
-#include "taco_kernel.h"
+#include "tapas_kernel.h"
 
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 #define IPOW2N(n) ((n >= 0) ? 1 : ODDEVEN(n))
+
+namespace {
 
 const complex_t I(0.,1.);                                       // Imaginary unit
 
@@ -99,11 +101,11 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
 }
-
-void taco_kernel::P2M(TacoCell &C) {
+}
+void tapas_kernel::P2M(Tapas::Cell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (unsigned i = 0; i < C.size(); ++i) {
-    const Body &B = C.particle(i);
+  for (tapas::index_t i = 0; i < C.nb(); ++i) {
+    const Body &B = C.body(i);
     vec3 dX = B.X - C.attr().X;
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
@@ -118,10 +120,10 @@ void taco_kernel::P2M(TacoCell &C) {
   }
 }
 
-void taco_kernel::M2M(TacoCell & C) {
+void tapas_kernel::M2M(Tapas::Cell & C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (int i = 0; i < C.nsubcells(); ++i) {
-    TacoCell &Cj=C.subcell(i);
+    Tapas::Cell &Cj=C.subcell(i);
     vec3 dX = C.attr().X - Cj.attr().X;
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
@@ -149,7 +151,7 @@ void taco_kernel::M2M(TacoCell & C) {
   }
 }
 
-void taco_kernel::M2L(TacoCell &Ci, TacoCell &Cj, vec3 Xperiodic, bool mutual) {
+void tapas_kernel::M2L(Tapas::Cell &Ci, Tapas::Cell &Cj, vec3 Xperiodic, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci.attr().X - Cj.attr().X - Xperiodic;
   real_t rho, alpha, beta;
@@ -195,7 +197,7 @@ void taco_kernel::M2L(TacoCell &Ci, TacoCell &Cj, vec3 Xperiodic, bool mutual) {
 }
 
 #if 0
-void taco_kernel::L2P(TacoCell &C) {
+void tapas_kernel::L2P(Tapas::Cell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (int i = 0; i < C.size(); ++i) {
     const Body &B = C.particle(i);  
@@ -234,9 +236,9 @@ void taco_kernel::L2P(TacoCell &C) {
 
 #else
 
-void taco_kernel::L2P(TacoParticleIterator &B) {
+void tapas_kernel::L2P(Tapas::BodyIterator &B) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  TacoCell &C = B.cell();
+  const Tapas::Cell &C = B.cell();
   vec3 dX = B->X - C.attr().X;
   vec3 spherical = 0;
   vec3 cartesian = 0;
@@ -270,9 +272,9 @@ void taco_kernel::L2P(TacoParticleIterator &B) {
 }
 
 #endif
-void taco_kernel::L2L(TacoCell &C) {
+void tapas_kernel::L2L(Tapas::Cell &C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  TacoCell &Cj = C.parent();
+  const Tapas::Cell &Cj = C.parent();
   vec3 dX = C.attr().X - Cj.attr().X;
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);

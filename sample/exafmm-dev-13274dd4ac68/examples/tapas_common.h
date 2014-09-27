@@ -1,21 +1,7 @@
 #ifndef EXAFMM_TAPAS_COMMON_H_
 #define EXAFMM_TAPAS_COMMON_H_
 
-#include "args.h"
-#include "bound_box.h"
-#ifdef CILK
-#include "build_tree3.h"
-#else
-#include "build_tree.h"
-#endif
-#include "dataset.h"
-#include "logger.h"
-#include "traversal.h"
-#include "up_down_pass.h"
-#include "verify.h"
-#if VTK
-#include "vtk.h"
-#endif
+#include "types.h" // exafmm/include/types.h
 
 #include "tapas.h"
 

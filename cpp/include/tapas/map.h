@@ -11,7 +11,7 @@ void Map(void (*f)(T1 &, T2 &, Args...),
          ProductIterator<T1_Iter, T2_Iter> prod, Args...args) {
   TAPAS_LOG_DEBUG() << "map product iterator size: "
                     << prod.size() << std::endl;  
-  for (unsigned i = 0; i < prod.size(); ++i) {
+  for (index_t i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
     prod++;
   }
@@ -22,7 +22,7 @@ void Map(void (*f)(T1 &, T1 &, Args...),
          ProductIterator<T1_Iter> prod, Args...args) {
   TAPAS_LOG_DEBUG() << "map product iterator size: "
                     << prod.size() << std::endl;  
-  for (unsigned i = 0; i < prod.size(); ++i) {
+  for (int i = 0; i < prod.size(); ++i) {
     f(prod.first(), prod.second(), args...);
     prod++;
   }
@@ -35,7 +35,7 @@ template <class T, class Iter, class... Args>
 void Map(void (*f)(T &, Args...), Iter<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product iterator size: "
                     << iter.size() << std::endl;  
-  for (unsigned i = 0; i < iter.size(); ++i) {
+  for (int i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
     iter++;
   }
@@ -45,7 +45,7 @@ template <class T, class... Args>
 void Map(void (*f)(T &, Args...), SubCellIterator<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product subcell iterator size: "
                     << iter.size() << std::endl;  
-  for (unsigned i = 0; i < iter.size(); ++i) {
+  for (int i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
     iter++;
   }
@@ -54,7 +54,7 @@ template <class T, class... Args>
 void Map(void (*f)(BodyIterator<T> &, Args...), BodyIterator<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product body iterator size: "
                     << iter.size() << std::endl;  
-  for (unsigned i = 0; i < iter.size(); ++i) {
+  for (int i = 0; i < iter.size(); ++i) {
     f(*iter, args...);
     iter++;
   }

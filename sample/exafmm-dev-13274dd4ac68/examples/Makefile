@@ -18,8 +18,10 @@ serial: serial.o $(OBJECTS)
 #serial_tapas: serial_tapas.o $(OBJECTS)
 #	$(CXX) $? $(LFLAGS) -o $@
 
-tapas: serial_tapas.o LaplaceP2PCPU_tapas.o LaplaceSphericalCPU_tapas.o
+tapas: serial_tapas
 serial_tapas.o: serial_tapas.cxx serial_tapas_helper.cxx
+serial_tapas: serial_tapas.o LaplaceSphericalCPU_tapas.o LaplaceP2PCPU_tapas.o $(OBJECTS)
+	$(CXX) $^ $(LFLAGS) -o $@
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)

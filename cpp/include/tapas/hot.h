@@ -115,15 +115,13 @@ template <int DIM>
 index_t FindFirst(const KeyType k, const HelperNode<DIM> *hn,
                   const index_t offset, const index_t len);
 
-template <int DIM, class BT>
+template <int DIM>
 KeyPair GetBodyRange(const KeyType k, const HelperNode<DIM> *hn,
-                     const BT *b, index_t offset,
-                     index_t len);
+                     index_t offset, index_t len);
 
-template <int DIM, class BT>
+template <int DIM>
 index_t GetBodyNumber(const KeyType k, const HelperNode<DIM> *hn,
-                      const BT *b, index_t offset,
-                      index_t len);
+                      index_t offset, index_t len);
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>    
@@ -187,7 +185,7 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
 template <CELL_TEMPLATE_PARAMS>    
 class Partition {
  private:
-  const unsigned max_nb_;
+  const int max_nb_;
   
  public:
   Partition(unsigned max_nb): max_nb_(max_nb) {}
@@ -435,24 +433,23 @@ tapas::index_t FindFirst(const KeyType k,
 
 // Returns the range of bodies that are included in the cell specified
 // by the given key. 
-template <int DIM, class BT>
+template <int DIM>
 tapas::KeyPair GetBodyRange(const tapas::KeyType k,
                             const HelperNode<DIM> *hn,
-                            const BT *b, index_t offset,
+                            index_t offset,
                             index_t len) {
   TAPAS_ASSERT(len > 0);
   index_t body_begin = FindFirst(k, hn, offset, len);
   TAPAS_ASSERT(body_begin >= offset);
   TAPAS_ASSERT(body_begin < len);
-  index_t body_num = GetBodyNumber(k, hn, b, body_begin,
+  index_t body_num = GetBodyNumber(k, hn, body_begin,
                                    len-(body_begin-offset));
   return std::make_pair(body_begin, body_num);
 }
 
-template <int DIM, class BT>
+template <int DIM>
 tapas::index_t GetBodyNumber(const tapas::KeyType k,
                              const HelperNode<DIM> *hn,
-                             const BT *b,
                              index_t offset,
                              index_t len) {
   //index_t body_begin = FindFirst(k, hn, offset, len);
@@ -508,7 +505,7 @@ Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::parent() const {
     TAPAS_LOG_ERROR() << "Trying to access parent of the root cell." << std::endl;
     TAPAS_DIE();
   }
-  KeyType *parent_key = MortonKeyParent<DIM>(key_);
+  KeyType parent_key = MortonKeyParent<DIM>(key_);
   auto *c = Lookup(parent_key);
   if (c == NULL) {
     TAPAS_LOG_ERROR() << "Parent (" << parent_key << ") of cell (" << key_ << ") not found."
@@ -562,7 +559,7 @@ Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
   BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
 
   KeyType root_key = 0;
-  KeyPair kp = hot::GetBodyRange(root_key, hn, b, 0, nb);
+  KeyPair kp = hot::GetBodyRange(root_key, hn, 0, nb);
   TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
 
   typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
@@ -594,7 +591,7 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
   index_t cur_len = c->nb();
   for (int i = 0; i < (1 << DIM); ++i) {
     TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
-    index_t child_bn = GetBodyNumber(child_key, hn, b, cur_offset, cur_len);
+    index_t child_bn = GetBodyNumber(child_key, hn, cur_offset, cur_len);
     TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
                       << child_bn << "\n";
     auto child_r = c->region().PartitionBSP(i);

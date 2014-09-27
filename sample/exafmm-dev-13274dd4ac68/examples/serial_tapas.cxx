@@ -10,9 +10,6 @@
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if VTK
-#include "vtk.h"
-#endif
 
 #define TAPAS
 
@@ -132,19 +129,5 @@ Region tr;
     data.initTarget(bodies);
   }
   logger::writeDAG();
-#if VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
-    Body body;
-    body.IBODY = 1;
-    body.X     = C->X;
-    body.SRC   = 0;
-    jbodies.push_back(body);
-  }
-  vtk3DPlot vtk;
-  vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(jbodies);
-  vtk.plot();
-#endif
   return 0;
 }

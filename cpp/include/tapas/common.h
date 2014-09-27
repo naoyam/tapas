@@ -14,9 +14,9 @@ namespace tapas {
 using std::string;
 using std::ostream;
 
-typedef unsigned index_t;
+typedef int index_t;
 
-void Exit(int status, const char *file, const char *func, int line) {
+inline void Exit(int status, const char *file, const char *func, int line) {
   if (status) {
     std::cerr << "Exiting at " << file << "@" << func << "#" << line << std::endl;
   }
