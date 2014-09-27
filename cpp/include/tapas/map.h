@@ -29,7 +29,8 @@ void Map(void (*f)(T1 &, T1 &, Args...),
 }
 
 #if 0
-// TODO: Why this fails to compile?
+// TODO: Why this fails to compile? Template instantiation with
+// template parameters not legal?
 template <class T, class Iter, class... Args>
 void Map(void (*f)(T &, Args...), Iter<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product iterator size: "
@@ -50,7 +51,7 @@ void Map(void (*f)(T &, Args...), SubCellIterator<T> iter, Args...args) {
   }
 }
 template <class T, class... Args>
-void Map(void (*f)(T &, Args...), BodyIterator<T> iter, Args...args) {
+void Map(void (*f)(BodyIterator<T> &, Args...), BodyIterator<T> iter, Args...args) {
   TAPAS_LOG_DEBUG() << "map non-product body iterator size: "
                     << iter.size() << std::endl;  
   for (unsigned i = 0; i < iter.size(); ++i) {

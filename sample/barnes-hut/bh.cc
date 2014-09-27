@@ -91,7 +91,7 @@ static void approximate(Tapas::Cell &c) {
   std::cerr << "Approximate: " << c.key() << std::endl;
   if (c.nb() == 0) {
     c.attr().w = 0.0;
-#if 1    
+#if 0
     c.attr().x = 0.0;
     c.attr().y = 0.0;
     c.attr().z = 0.0;
@@ -130,15 +130,11 @@ static void interact(Tapas::Cell &c1, Tapas::Cell &c2, real_t theta) {
   } else {
     // use apploximation
     const float4 &p1 = c1.body(0);
-    std::cerr << "c2: " << c2.key() << std::endl;
-    std::cerr << "r2: " << distR2(c2.attr(), p1) << std::endl;
     real_t d = std::sqrt(distR2(c2.attr(), p1));
-    std::cerr << "c2 region: " << c2.region() << std::endl;
     real_t s = c2.width(0);
-#ifdef DISABLE_APPROXIMATION
+#if 0
     tapas::Map(interact, tapas::Product(c1, c2.subcells()), theta);
 #else
-    //if ((s / d) < theta) {
     if ((s/ d) < theta) {
       tapas::Map(ComputeForce, c1.bodies(), c2.attr(), EPS2);
     } else {
