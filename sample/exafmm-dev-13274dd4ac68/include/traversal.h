@@ -36,7 +36,7 @@ private:
   void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
-    std::cerr << "R2: " << R2 << " vs " << (Ci->R+Cj->R) * (Ci->R+Cj->R) << std::endl;
+    //std::cerr << "R2: " << R2 << " vs " << (Ci->R+Cj->R) * (Ci->R+Cj->R) << std::endl;
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
       //std::cerr << "periodic: " << Xperiodic << std::endl;
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
