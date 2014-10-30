@@ -41,9 +41,7 @@ int main(int argc, char ** argv) {
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
-#ifdef TAPAS
 Region tr;
-#endif
 
   num_threads(args.threads);
 
@@ -64,10 +62,7 @@ Region tr;
     TAPAS_LOG_DEBUG() << "Bounding box: " << tr << std::endl;
 #endif
 
-#ifndef TAPAS
-    cells = buildTree.buildTree(bodies, bounds);
-    upDownPass.upwardPass(cells);
-#else
+
     Tapas::Cell *root = Tapas::Partition(
         bodies.data(), args.numBodies, tr, args.ncrit);
 #if 0
@@ -88,12 +83,8 @@ Region tr;
       }
     }
 #endif
-#endif
 
-#ifndef TAPAS
-    traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-    jbodies = bodies;
-#else // TAPAS
+
     numM2L = 0; numP2P = 0;
     tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
     TAPAS_LOG_DEBUG() << "M2L done\n";
@@ -108,11 +99,8 @@ Region tr;
       }
     }
 #endif
-#endif
 
-#ifndef TAPAS
-    upDownPass.downwardPass(cells);
-#else
+
     tapas::Map(FMM_L2P, *root);
     TAPAS_LOG_DEBUG() << "L2P done\n";
 #if 0
@@ -123,9 +111,8 @@ Region tr;
       }
     }
 #endif
-#endif
 
-#ifdef TAPAS
+
     CopyBackResult(bodies, root->body_attrs(), args.numBodies);
 #if 0
     {
@@ -136,9 +123,6 @@ Region tr;
       }
     }
 #endif
-#endif
-
-
 
     logger::printTitle("Total runtime");
     logger::stopPAPI();
