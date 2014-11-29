@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
-Region tr;
+  Region tr;
 
   num_threads(args.threads);
 
