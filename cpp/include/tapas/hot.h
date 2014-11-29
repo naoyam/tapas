@@ -1,3 +1,7 @@
+/**
+ * @file hot.h
+ * @brief HOT (Hashed Octree) implementation of Tapas' tree
+ */
 #ifndef TAPAS_HOT_
 #define TAPAS_HOT_
 
@@ -548,14 +552,14 @@ BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::body_attr(index_t idx) const {
 }
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-SubCellIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+SubCellIterator<Cell<CELL_TEMPLATE_ARGS>> Cell<CELL_TEMPLATE_ARGS>::
 subcells() const {
   return SubCellIterator<Cell>(*this);
 }
 
 
 template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BodyIterator<Cell<CELL_TEMPLATE_ARGS> > Cell<CELL_TEMPLATE_ARGS>::
+BodyIterator<Cell<CELL_TEMPLATE_ARGS>> Cell<CELL_TEMPLATE_ARGS>::
 bodies() const {
   return BodyIterator<Cell<CELL_TEMPLATE_ARGS> >(*this);
 }
@@ -631,8 +635,8 @@ void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
 } // namespace hot
 
 template <CELL_TEMPLATE_PARAMS, class T2>
-ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, T2> Product(
-    hot::Cell<CELL_TEMPLATE_ARGS> &c, T2 t2) {
+ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>, T2>
+Product(hot::Cell<CELL_TEMPLATE_ARGS> &c, T2 t2) {
   TAPAS_LOG_DEBUG() << "Cell-X product\n";
   typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
   typedef CellIterator<CellType> CellIterType;
@@ -640,16 +644,27 @@ ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, T2> Product(
 }
 
 template <class T1, CELL_TEMPLATE_PARAMS>
-ProductIterator<T1, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > > Product(
-    T1 t1, hot::Cell<CELL_TEMPLATE_ARGS> &c) {
+ProductIterator<T1, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>>
+Product(T1 t1, hot::Cell<CELL_TEMPLATE_ARGS> &c) {
   TAPAS_LOG_DEBUG() << "X-Cell product\n";
   typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
   typedef CellIterator<CellType> CellIterType;
   return ProductIterator<T1, CellIterType>(t1, CellIterType(c));
 }
 
+/**
+ * Constructs a ProductIterator for dual tree traversal of two trees
+ * \tparam int DIM
+ * \tparam class FP
+ * \tparam class BT
+ * \tparam class BT_ATTR
+ * \tparam class ATTR=tapas::NONE
+ * \param c1 Root cell of the first tree
+ * \param c2 Root cell of the second tree
+ */ 
 template <CELL_TEMPLATE_PARAMS>
-ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> >, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS> > >
+ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>,
+                CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>>
 Product(hot::Cell<CELL_TEMPLATE_ARGS> &c1,
         hot::Cell<CELL_TEMPLATE_ARGS> &c2) {
   TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
