@@ -80,7 +80,7 @@ private:
       else kernel::M2M(C, C0);                                  //  M2M kernel
       if (useRmax) setRmax();                                   //  Redefine cell radius R based on maximum distance
       C->R /= theta;                                            //  Divide R by theta
-#if 1
+#if 0
       {
         if (C->NCHILD == 0) {
           std::ofstream out("ref_p2m_c.txt", std::ofstream::app);
