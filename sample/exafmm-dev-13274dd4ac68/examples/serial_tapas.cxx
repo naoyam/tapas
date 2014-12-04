@@ -62,7 +62,6 @@ int main(int argc, char ** argv) {
     TAPAS_LOG_DEBUG() << "Bounding box: " << tr << std::endl;
 #endif
 
-
     Tapas::Cell *root = Tapas::Partition(
         bodies.data(), args.numBodies, tr, args.ncrit);
 #if 0
@@ -73,7 +72,10 @@ int main(int argc, char ** argv) {
       }
     }
 #endif
+    
+    logger::startTimer("Upward pass");                          // Start timer
     tapas::Map(FMM_P2M, *root, args.theta);
+    logger::stopTimer("Upward pass");                          // Start timer
     TAPAS_LOG_DEBUG() << "P2M done\n";
 #if 0
     {
@@ -85,11 +87,12 @@ int main(int argc, char ** argv) {
 #endif
 
 
+    logger::startTimer("Traverse");
     numM2L = 0; numP2P = 0;
     tapas::Map(FMM_M2L, tapas::Product(*root, *root), args.mutual, args.nspawn);
+    logger::stopTimer("Traverse");
+    
     TAPAS_LOG_DEBUG() << "M2L done\n";
-    std::cerr << "M2L calls: " << numM2L << std::endl;
-    std::cerr << "P2P calls: " << numP2P << std::endl;
     jbodies = bodies;
 #if 0
     {
@@ -100,8 +103,10 @@ int main(int argc, char ** argv) {
     }
 #endif
 
-
+    logger::startTimer("Downward pass");
     tapas::Map(FMM_L2P, *root);
+    logger::stopTimer("Downward pass");
+    
     TAPAS_LOG_DEBUG() << "L2P done\n";
 #if 0
     {
@@ -147,6 +152,8 @@ int main(int argc, char ** argv) {
     logger::printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+    std::cerr << "M2L calls: " << numM2L << std::endl;
+    std::cerr << "P2P calls: " << numP2P << std::endl;
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
