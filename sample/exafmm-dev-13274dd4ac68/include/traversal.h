@@ -44,18 +44,18 @@ private:
       countWeight(Ci, Cj, mutual, remote);                      //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
-	std::cout << Ci->ICELL << " " << Cj->ICELL << std::endl;
-	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
+				std::cout << Ci->ICELL << " " << Cj->ICELL << std::endl;
+				kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         countKernel(numM2L);                                    //   Increment M2L counter
-	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
+				countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
       } else {                                                  //  Else if the bodies were sent
-	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
-	  kernel::P2P(Ci);                                      //    P2P kernel for single cell
-	} else {                                                //   Else if source and target are different
-	  kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
-	}                                                       //   End if for same source and target
-	countKernel(numP2P);                                    //   Increment P2P counter
-	countWeight(Ci, Cj, mutual, remote);                    //   Increment P2P weight
+				if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
+					kernel::P2P(Ci);                                      //    P2P kernel for single cell
+				} else {                                                //   Else if source and target are different
+					kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
+				}                                                       //   End if for same source and target
+				countKernel(numP2P);                                    //   Increment P2P counter
+				countWeight(Ci, Cj, mutual, remote);                    //   Increment P2P weight
       }                                                         //  End if for bodies
     } else {                                                    // Else if cells are close but not bodies
       splitCell(Ci, Cj, Xperiodic, mutual, remote);             //  Split cell and call function recursively for child
@@ -81,42 +81,42 @@ private:
       Tracer tracer;                                            //  Instantiate tracer
       logger::startTracer(tracer);                              //  Start tracer
       if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
-	if (CiBegin == CjBegin) {                               //   If Ci == Cj
-	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
-	  traversal->traverse(CiBegin, CjBegin, Xperiodic, mutual, remote);// Call traverse for single pair
-	} else {                                                //   If Ci != Cj
-	  for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {            //    Loop over all Ci cells
-	    for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {          //     Loop over all Cj cells
-	      traversal->traverse(Ci, Cj, Xperiodic, mutual, remote); // Call traverse for single pair
-	    }                                                   //     End loop over all Cj cells
-	  }                                                     //    End loop over all Ci cells
-	}                                                       //   End if for Ci == Cj
+				if (CiBegin == CjBegin) {                               //   If Ci == Cj
+					assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
+					traversal->traverse(CiBegin, CjBegin, Xperiodic, mutual, remote);// Call traverse for single pair
+				} else {                                                //   If Ci != Cj
+					for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {            //    Loop over all Ci cells
+						for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {          //     Loop over all Cj cells
+							traversal->traverse(Ci, Cj, Xperiodic, mutual, remote); // Call traverse for single pair
+						}                                                   //     End loop over all Cj cells
+					}                                                     //    End loop over all Ci cells
+				}                                                       //   End if for Ci == Cj
       } else {                                                  //  If many cells are in the range
-	C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
-	C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
-	mk_task_group;                                          //   Initialize task group
-	{
-	  TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
-				   CjBegin, CjMid, Xperiodic, mutual, remote);
-	  create_taskc(leftBranch);                             //    Ci:former Cj:former
-	  TraverseRange rightBranch(traversal, CiMid, CiEnd,    //    Instantiate recursive functor
-				    CjMid, CjEnd, Xperiodic, mutual, remote);
-	  rightBranch();                                        //    Ci:latter Cj:latter
-	  wait_tasks;                                           //    Synchronize task group
-	}
-	{
-	  TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
-				   CjMid, CjEnd, Xperiodic, mutual, remote);
-	  create_taskc(leftBranch);                             //    Ci:former Cj:latter
-	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
+				C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
+				C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
+				mk_task_group;                                          //   Initialize task group
+				{
+					TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
+																	 CjBegin, CjMid, Xperiodic, mutual, remote);
+					create_taskc(leftBranch);                             //    Ci:former Cj:former
+					TraverseRange rightBranch(traversal, CiMid, CiEnd,    //    Instantiate recursive functor
+																		CjMid, CjEnd, Xperiodic, mutual, remote);
+					rightBranch();                                        //    Ci:latter Cj:latter
+					wait_tasks;                                           //    Synchronize task group
+				}
+				{
+					TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
+																	 CjMid, CjEnd, Xperiodic, mutual, remote);
+					create_taskc(leftBranch);                             //    Ci:former Cj:latter
+					if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
             TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
-				      CjBegin, CjMid, Xperiodic, mutual, remote);
-	    rightBranch();                                      //    Ci:latter Cj:former
-	  } else {                                              //    If mutual or self interaction
-	    assert(CiEnd == CjEnd);                             //     Check if mutual & self interaction
-	  }                                                     //    End if for mutual & self interaction
-	  wait_tasks;                                           //    Synchronize task group
-	}
+																			CjBegin, CjMid, Xperiodic, mutual, remote);
+						rightBranch();                                      //    Ci:latter Cj:former
+					} else {                                              //    If mutual or self interaction
+						assert(CiEnd == CjEnd);                             //     Check if mutual & self interaction
+					}                                                     //    End if for mutual & self interaction
+					wait_tasks;                                           //    Synchronize task group
+				}
       }                                                         //  End if for many cells in range
       logger::stopTracer(tracer);                               //  Stop tracer
     }                                                           // End overload operator()
@@ -267,33 +267,33 @@ public:
     C_iter Cj;                                                  //!< Iterator of source cell
     int prange;                                                 //!< Range of periodic images
     real_t cycle;                                               //!< Periodic cycle
-    DirectRecursion(C_iter _Ci, C_iter _Cj, int _prange, real_t _cycle) :// Constructor
-      Ci(_Ci), Cj(_Cj), prange(_prange), cycle(_cycle) {}       // Initialize variables
+	DirectRecursion(C_iter _Ci, C_iter _Cj, int _prange, real_t _cycle) :// Constructor
+		Ci(_Ci), Cj(_Cj), prange(_prange), cycle(_cycle) {}       // Initialize variables
     void operator() () {                                        // Overload operator
       if (Ci->NBODY < 25) {                                     // If number of target bodies is less than threshold
-	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
-	for (int ix=-prange; ix<=prange; ix++) {                //   Loop over x periodic direction
-	  for (int iy=-prange; iy<=prange; iy++) {              //    Loop over y periodic direction
-	    for (int iz=-prange; iz<=prange; iz++) {            //     Loop over z periodic direction
-	      Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
-	      Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
-	      Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
-	      kernel::P2P(Ci, Cj, Xperiodic, false);            //      Evaluate P2P kernel
-	    }                                                   //     End loop over z periodic direction
-	  }                                                     //    End loop over y periodic direction
-	}                                                       //   End loop over x periodic direction
+				vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
+				for (int ix=-prange; ix<=prange; ix++) {                //   Loop over x periodic direction
+					for (int iy=-prange; iy<=prange; iy++) {              //    Loop over y periodic direction
+						for (int iz=-prange; iz<=prange; iz++) {            //     Loop over z periodic direction
+							Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
+							Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
+							Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
+							kernel::P2P(Ci, Cj, Xperiodic, false);            //      Evaluate P2P kernel
+						}                                                   //     End loop over z periodic direction
+					}                                                     //    End loop over y periodic direction
+				}                                                       //   End loop over x periodic direction
       } else {                                                  // If number of target bodies is more than threshold
         Cells cells; cells.resize(1);                           //  Initialize new cell vector
-	C_iter Ci2 = cells.begin();                             //  New cell iterator for right branch
-	Ci2->BODY = Ci->BODY + Ci->NBODY / 2;                   //  Set begin iterator to handle latter half
-	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
-	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
-	mk_task_group;                                          //  Initialize task group
+				C_iter Ci2 = cells.begin();                             //  New cell iterator for right branch
+				Ci2->BODY = Ci->BODY + Ci->NBODY / 2;                   //  Set begin iterator to handle latter half
+				Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
+				Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
+				mk_task_group;                                          //  Initialize task group
         DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
-	create_taskc(leftBranch);                               //  Create new task for left branch
-	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
-	rightBranch();                                          //  Use old task for right branch
-	wait_tasks;                                             //  Synchronize task group
+				create_taskc(leftBranch);                               //  Create new task for left branch
+				DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
+				rightBranch();                                          //  Use old task for right branch
+				wait_tasks;                                             //  Synchronize task group
       }                                                         // End if for NBODY threshold
     }                                                           // End operator
   };
