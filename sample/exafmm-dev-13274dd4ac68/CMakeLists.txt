@@ -1,55 +1,28 @@
-# Reject in-place build
-IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-  MESSAGE(FATAL_ERROR "Rejecting in-place build. Please use a build directory")
-ENDIF()
-# Project header
-PROJECT(ExaFMM)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+set(EQUATION "Laplace")
+set(BASIS    "Spherical")
+set(EXPANSION 4)
+set(PRECISION "FP64")
+set(DEVICE    "CPU")
 
-# All options are set here
-SET(EQUATION Laplace) # {Laplace, Yukawa, Helmholtz, Stokes}
-SET(BASIS Cartesian) # {Cartesian, Spherical, Rotation, Planewave}
-OPTION(USE_MPI "Use MPI" ON)
-OPTION(USE_GPU "Use GPUs" OFF)
-OPTION(USE_VTK "Use VTK" OFF)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -ggdb3 -Wall -O2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -fcolor-diagnostics")
+endif()
 
-# MPI
-IF(USE_MPI)
-  FIND_PACKAGE(MPI REQUIRED)
-  MESSAGE(STATUS "Enabling MPI")
-  SET(CMAKE_CXX_COMPILER ${MPI_COMPILER})
-ENDIF()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${PRECISION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D${BASIS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DEXPANSION=${EXPANSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DASSERT")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCOUNT")
 
-# CUDA
-IF(USE_GPU)
-  SET(DEVICE GPU)
-  FIND_PACKAGE(CUDA REQUIRED)
-  MESSAGE(STATUS "Enabling CUDA ${CUDA_VERSION}")
-  IF(CUDA_SDK_ROOT_DIR MATCHES "CUDA_SDK_ROOT_DIR-NOTFOUND")
-    MESSAGE(FATAL_ERROR "Could not locate CUDA SDK. Try setting environment variable NVSDKCOMPUTE_ROOT")
-  ENDIF()
-  SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21)
-  INCLUDE_DIRECTORIES(${CUDA_SDK_ROOT_DIR}/common/inc)
-ELSE()
-  SET(DEVICE CPU)
-ENDIF()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTAPAS_LOG_LEVEL=0 -DTAPAS_DEBUG=0")
 
-# VTK
-IF(USE_VTK)
-  FIND_PACKAGE(VTK REQUIRED)
-  MESSAGE(STATUS "Enabling VTK ${VTK_VERSION}")
-  ADD_DEFINITIONS(-DVTK)
-  INCLUDE(${VTK_USE_FILE})
-  LINK_LIBRARIES(vtkCommon vtkFiltering vtkGraphics vtkIO vtkRendering vtkViews vtkWidgets)
-ENDIF()
+# ExaFMM's include directory
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -O3")
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include)
-ADD_DEFINITIONS(-D${EQUATION})
-ADD_DEFINITIONS(-D${BASIS})
-ADD_DEFINITIONS(-D${DEVICE})
-ADD_SUBDIRECTORY(kernels)
+# Tapas' C++ include directory
+include_directories("${PROJECT_SOURCE_DIR}/cpp/include")
 
-# Unit tests
-INCLUDE(CTest)
-ADD_SUBDIRECTORY(examples)
+add_subdirectory(examples)
+
+
