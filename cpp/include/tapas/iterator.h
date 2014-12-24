@@ -17,6 +17,7 @@ class BodyIterator {
   const CellType &c_;
   index_t idx_;
  public:
+  int index() const { return idx_; } // for debugging
   BodyIterator(const CellType &c)
       : c_(c), idx_(0) {}
   typedef BodyIterator value_type;
@@ -29,6 +30,16 @@ class BodyIterator {
   }
   BodyIterator &operator*() {
     return *this;
+  }
+  BodyIterator<CellType>& operator+=(int n) {
+    idx_ += n;
+    assert(idx_ < c_.nb());
+    return *this;
+  }
+  BodyIterator<CellType> operator+(int n) {
+    BodyIterator<CellType> tmp(*this);
+    tmp += n;
+    return tmp;
   }
   typename CellType::BODY_INFO::type *operator->() const {
     return &(c_.body(idx_));
@@ -94,11 +105,22 @@ class CellIterator {
   bool operator==(const CellIterator &x) const {
     return c_ == x.c_;
   }
+  CellIterator& operator+(int n) {
+    assert(n == 0);
+    return *this;
+  }
+  CellIterator& operator+=(int n) {
+    assert(n == 0);
+    return *this;
+  }
   template <class T>
   bool operator==(const T &) const { return false; }
   void rewind(int ) {}
   int size() const {
     return 1;
+  }
+  bool AllowMutualInteraction(const CellIterator &x) const {
+    return c_ == x.c_;
   }
 }; // class CellIterator
 
@@ -108,8 +130,16 @@ class SubCellIterator {
   int idx_;
  public:
   typedef CELL value_type;
-  typedef typename CELL::attr_type attr_type;  
-  SubCellIterator(const CELL &c): c_(c), idx_(0) {}
+  typedef typename CELL::attr_type attr_type;
+  
+ SubCellIterator(const CELL &c): c_(c), idx_(0) {}
+ SubCellIterator(const SubCellIterator& rhs) : c_(rhs.c_),idx_(rhs.idx_) {}
+  SubCellIterator& operator=(const SubCellIterator& rhs) {
+    this->c_ = rhs.c_;
+    this->idx_ = rhs.idx_;
+    return *this;
+  }
+  
   int size() const {
     if (c_.IsLeaf()) {
       return 0;
@@ -129,8 +159,17 @@ class SubCellIterator {
   void rewind(int idx) {
     idx_ = idx;
   }
+  SubCellIterator<CELL>& operator+=(int ofst) {
+    idx_ += ofst;
+    return *this;
+  }
   bool operator==(const SubCellIterator &x) const {
     return c_ == x.c_;
+  }
+  SubCellIterator operator+(int n) {
+    SubCellIterator newiter(*this);
+    newiter.idx_ += n;
+    return newiter;
   }
   template <class T>
   bool operator==(const T &) const { return false; }
@@ -142,11 +181,11 @@ class SubCellIterator {
 
 template <class T1, class T2=void>
 class ProductIterator {
+ public:
   index_t idx1_;
   index_t idx2_;
   T1 t1_;
   T2 t2_;
- public:
 
   ProductIterator(const T1 &t1, const T2 &t2):
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
@@ -189,11 +228,11 @@ class ProductIterator {
 
 template <class ITER>
 class ProductIterator<ITER, void> {
+ public:
   index_t idx1_;
   index_t idx2_;
   ITER t1_;
   ITER t2_;
- public:
   ProductIterator(const ITER &t1, const ITER &t2):
       idx1_(0), idx2_(0), t1_(t1), t2_(t2) {
     if (t1_.AllowMutualInteraction(t2_)) {

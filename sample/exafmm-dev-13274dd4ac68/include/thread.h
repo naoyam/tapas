@@ -2,26 +2,30 @@
 #define thread_h
 
 #if TBB
-#if DAG_RECORDER == 2
-#define TO_TBB 1
-#include <tpswitch/tpswitch.h>
-#else
-#include <tbb/task_group.h>
-#include <tbb/task_scheduler_init.h>
+# if DAG_RECORDER == 2
+#  define TO_TBB 1
+#  include <tpswitch/tpswitch.h>
+# else
+#  include <tbb/task_group.h>
+#  include <tbb/task_scheduler_init.h>
 using namespace tbb;
-#endif
+# endif
 
 #elif MTHREAD
-#define TO_MTHREAD_NATIVE 1
-#include <tpswitch/tpswitch.h>
+# define TO_MTHREAD_NATIVE 1
+# include <tpswitch/tpswitch.h>
 
 #elif QTHREAD
 #define TO_QTHREAD 1
 #include <tpswitch/tpswitch.h>
 
+#else
+#include <tpswitch/tpswitch.h>
+
 #endif
 
 #if TO_TBB || TO_MTHREAD_NATIVE || TO_QTHREAD
+// other constructs are defined in <tpswitch.h>
 #define num_threads(E)
 
 #elif TBB
@@ -40,11 +44,12 @@ using namespace tbb;
 #define num_threads(E)                omp_set_num_threads(E);
 
 #else
-#define mk_task_group
-#define wait_tasks
-#define create_taskc(E)               E()
-#define create_taskc_if(x, E)         E()
 #define num_threads(E)
+/* #define mk_task_group */
+/* #define wait_tasks */
+/* #define create_taskc(E)               E() */
+/* #define create_taskc_if(x, E)         E() */
+/* #define num_threads(E) */
 
 #endif
 
