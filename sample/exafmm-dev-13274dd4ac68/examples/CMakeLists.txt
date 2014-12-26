@@ -18,8 +18,8 @@ endif()
 #------------------------------------------------------------------
 add_executable(serial
   serial.cxx
-  ../kernels/${EQUATION}${BASIS}${DEVICE}.cxx
-  ../kernels/${EQUATION}P2P${DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
   )
 
 set_target_properties(serial
@@ -30,8 +30,8 @@ set_target_properties(serial
 #------------------------------------------------------------------
 add_executable(serial_mt
   serial.cxx
-  ../kernels/${EQUATION}${BASIS}${DEVICE}.cxx
-  ../kernels/${EQUATION}P2P${DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
   )
 
 set_target_properties(serial_mt
@@ -44,8 +44,8 @@ set_target_properties(serial_mt
 #------------------------------------------------------------------
 add_executable(serial_simd_mt
   serial.cxx
-  ../kernels/${EQUATION}${BASIS}${DEVICE}.cxx
-  ../kernels/${EQUATION}P2P${DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
   )
 
 set_target_properties(serial_simd_mt
@@ -58,10 +58,10 @@ set_target_properties(serial_simd_mt
 #------------------------------------------------------------------
 add_executable(serial_tapas
   serial_tapas.cxx
-  ${EQUATION}${BASIS}${DEVICE}_tapas.cxx
-  ${EQUATION}P2P${DEVICE}_tapas.cxx
-  ../kernels/${EQUATION}${BASIS}${DEVICE}.cxx
-  ../kernels/${EQUATION}P2P${DEVICE}.cxx
+  ${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}_tapas.cxx
+  ${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}_tapas.cxx
+  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
   )
 
 set_target_properties(serial_tapas
@@ -70,10 +70,10 @@ set_target_properties(serial_tapas
 # Tapas implementation of ExaFMM with multithreading
 add_executable(serial_tapas_mt
   serial_tapas.cxx
-  ${EQUATION}${BASIS}${DEVICE}_tapas.cxx
-  ${EQUATION}P2P${DEVICE}_tapas.cxx
-  ../kernels/${EQUATION}${BASIS}${DEVICE}.cxx
-  ../kernels/${EQUATION}P2P${DEVICE}.cxx
+  ${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}_tapas.cxx
+  ${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}_tapas.cxx
+  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
   )
 
 set_target_properties(serial_tapas_mt
