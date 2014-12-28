@@ -151,7 +151,7 @@ public:
   }
 
   void print(int stringLength, int P) {
-    if (verbose) {                                              // If verbose flag is true
+    if (verbose) {            // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
 		<< std::setw(stringLength)                      //  Set format
@@ -162,6 +162,13 @@ public:
 		<< "ncrit" << " : " << ncrit << std::endl       //  Print ncrit
 		<< std::setw(stringLength)                      //  Set format
 		<< "nspawn" << " : " << nspawn << std::endl     //  Print nspawn
+		<< std::setw(stringLength)                      //  Set format
+		<< "threading mode" << " : "
+#if MTHREAD
+		<< "MassiveThreads" << std::endl
+#else
+		<< "N/A" << std::endl
+#endif
 		<< std::setw(stringLength)                      //  Set format
 		<< "threads" << " : " << threads << std::endl   //  Print threads
 		<< std::setw(stringLength)                      //  Set format

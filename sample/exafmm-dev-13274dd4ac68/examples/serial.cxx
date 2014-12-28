@@ -32,17 +32,7 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
-#if IneJ
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->X[0] += M_PI;
-    B->X[0] *= 0.5;
-  }
-  jbodies = data.initBodies(args.numBodies, args.distribution, 1);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    B->X[0] -= M_PI;
-    B->X[0] *= 0.5;
-  }
-#endif
+
   for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
@@ -50,27 +40,21 @@ int main(int argc, char ** argv) {
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
     std::cerr << "Bounding box: " << bounds.Xmin << "->" << bounds.Xmax << std::endl;
-#if IneJ
-    bounds = boundBox.getBounds(jbodies,bounds);
-#endif
+
     cells = buildTree.buildTree(bodies, bounds);
     upDownPass.upwardPass(cells);
-#if IneJ
-    jcells = buildTree.buildTree(jbodies, bounds);
-    upDownPass.upwardPass(jcells);
-    traversal.dualTreeTraversal(cells, jcells, cycle, false);
-#else
+
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
 #if 1
     {
-      std::ofstream tapas_out("ref_M2L.txt");    
+      std::ofstream tapas_out("ref_M2L.txt");
       for (int i = 0; i < args.numBodies; ++i) {
         tapas_out << bodies[i].TRG << std::endl;
       }
     }
-#endif    
 #endif
+
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopPAPI();

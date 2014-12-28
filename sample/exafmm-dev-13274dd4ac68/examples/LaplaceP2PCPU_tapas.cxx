@@ -10,6 +10,7 @@ void tapas_kernel::P2P(Tapas::BodyIterator &Bi, Tapas::BodyIterator &Bj, vec3 Xp
   kreal_t az = 0;
   vec3 dX = Bi->X - Bj->X - Xperiodic;
   real_t R2 = norm(dX) + EPS2;
+  //std::cerr << "tapas_kernel::P2P (" << Bi.index() << "," << Bj.index() << ")" << std::endl;
   if (R2 != 0) {
     real_t invR2 = 1.0 / R2;
     real_t invR = Bi->SRC * Bj->SRC * sqrt(invR2);

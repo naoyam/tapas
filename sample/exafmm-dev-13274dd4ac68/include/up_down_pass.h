@@ -80,7 +80,7 @@ private:
       else kernel::M2M(C, C0);                                  //  M2M kernel
       if (useRmax) setRmax();                                   //  Redefine cell radius R based on maximum distance
       C->R /= theta;                                            //  Divide R by theta
-#if 1
+#if 0
       {
         if (C->NCHILD == 0) {
           std::ofstream out("ref_p2m_c.txt", std::ofstream::app);
@@ -92,7 +92,7 @@ private:
         }
       }
 #endif
-      
+
     }                                                           // End overload operator()
   };
 
@@ -101,7 +101,7 @@ private:
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
     PreOrderTraversal(C_iter _C, C_iter _C0) :                  // Constructor
-      C(_C), C0(_C0) {}                                         // Initialize variables
+            C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
       kernel::L2L(C, C0);                                       //  L2L kernel
       if (C->NCHILD==0) kernel::L2P(C);                         //  L2P kernel
@@ -109,15 +109,15 @@ private:
       C_iter CP = C0 + C->IPARENT;                              // Parent cell
       C->WEIGHT += CP->WEIGHT;                                  // Add parent's weight
       if (C->NCHILD==0) {                                       // If leaf cell
-	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //  Loop over bodies in cell
-	  B->WEIGHT += C->WEIGHT;                               //   Add cell weights to bodies
-	}                                                       //  End loop over bodies in cell
+        for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //  Loop over bodies in cell
+          B->WEIGHT += C->WEIGHT;                               //   Add cell weights to bodies
+        }                                                       //  End loop over bodies in cell
       }                                                         // End if for leaf cell
 #endif
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
-	create_taskc(preOrderTraversal);                        //   Create new task for recursive call
+        PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
+        create_taskc(preOrderTraversal);                        //   Create new task for recursive call
       }                                                         //  End loop over chlid cells
       wait_tasks;                                               //  Synchronize tasks
     }                                                           // End overload operator()
@@ -139,8 +139,8 @@ public:
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
       if (useRopt) {                                            //  If using error optimized theta
-	SetRopt setRopt(C0, C0, c, theta);                      //   Instantiate recursive functor
-	setRopt();                                              //   Error optimization of R
+        SetRopt setRopt(C0, C0, c, theta);                      //   Instantiate recursive functor
+        setRopt();                                              //   Error optimization of R
       }                                                         //  End if for using error optimized theta
     }                                                           // End if for empty cell vector
     logger::stopTimer("Upward pass");                           // Stop
@@ -152,11 +152,13 @@ public:
     logger::startTimer("Downward pass");                        // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Root cell
-      if (C0->NCHILD == 0) kernel::L2P(C0);                     //  If root is the only cell do L2P
+      if (C0->NCHILD == 0) {
+        kernel::L2P(C0);                     //  If root is the only cell do L2P
+      }
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
-	PreOrderTraversal preOrderTraversal(CC, C0);            //    Instantiate recursive functor
-	create_taskc(preOrderTraversal);                        //    Recursive call for downward pass
+        PreOrderTraversal preOrderTraversal(CC, C0);            //    Instantiate recursive functor
+        create_taskc(preOrderTraversal);                        //    Recursive call for downward pass
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
     }                                                           // End if for empty cell vector

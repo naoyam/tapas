@@ -16,7 +16,7 @@ DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
 ### choose C++ compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp -std=c++11 # GCC
 #CXX	= CC -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
@@ -26,7 +26,7 @@ DEVICE	= CPU
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 # Clang with libc++
-CXX	= clang++ -std=c++11 -stdlib=libc++ -ggdb3 -Wall -Wextra -O2  -funroll-loops -fcolor-diagnostics
+CXX	= clang++ -std=c++11  -ggdb3 -Wall -Wextra -O2  -funroll-loops -fcolor-diagnostics 
 ##CXX	= icpc -Wall -O2
 
 ### choose fortran compiler
@@ -34,11 +34,11 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # gfortran
 #FC = mpif90 -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
 
 ### Base flags
-CXX	+= -I../include -I../../../cpp/include
+CXX	+= -I../include -I../../../cpp/include -I$(HOME)/local/include
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-LFLAGS  += -DEXPANSION=10 # Specify expansion order
+LFLAGS  += -DEXPANSION=4 # Specify expansion order
 # SIMD causes compilation errors on umekoji
 #LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
@@ -52,7 +52,8 @@ LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
 ### Thread model flags
 #LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
 #LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+LFLAGS	+= -DMTHREAD -lmyth-native -L$(HOME)/local/lib # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -lmyth-native -L$(HOME)/local/lib # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
 
@@ -81,6 +82,7 @@ endif
 
 MAKEFLAGS += --no-print-directory
 
+CXX += $(CXXFLAGS)
 CXX += -DTAPAS_LOG_LEVEL=0 -DTAPAS_DEBUG=0
 
 .c.o	:
