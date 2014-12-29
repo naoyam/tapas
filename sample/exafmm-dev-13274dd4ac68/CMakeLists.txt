@@ -3,6 +3,7 @@ set(EXAFMM_BASIS    "Spherical" CACHE STRING "Expansion basis (Cartesian or Sphe
 set(EXAFMM_EXPANSION 4          CACHE STRING "Length of expansion")
 set(EXAFMM_FP64      True       CACHE BOOL   "Use double")
 set(EXAFMM_DEVICE    "CPU")
+set(EXAFMM_ENABLE_MT True       CACHE BOOL   "Enable multithreading with MassiveThreads")
 
 if (EXAFMM_FP64)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFP64")
