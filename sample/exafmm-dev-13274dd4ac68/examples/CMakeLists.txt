@@ -38,11 +38,10 @@ if (EXAFMM_ENABLE_MT)
     ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
     ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
     )
-  
-  set_target_properties(serial_mt
-    PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD")
-  set_target_properties(serial_mt
-    PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+
+  set_property(TARGET serial_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_mt PROPERTY COMPILE_FLAGS "-DMTHREAD")
+  target_link_libraries(serial_mt ${MYTH_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------
@@ -55,10 +54,9 @@ if (EXAFMM_ENABLE_MT)
     ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
     )
 
-  set_target_properties(serial_simd_mt
-    PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD ${SIMD_FLAG}")
-  set_target_properties(serial_simd_mt
-    PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+  set_property(TARGET serial_simd_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_simd_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAGS}")
+  target_link_libraries(serial_simd_mt ${MYTH_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------
@@ -88,9 +86,8 @@ if (EXAFMM_ENABLE_MT)
     ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
     )
 
-  set_target_properties(serial_tapas_mt
-    PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD")
-  set_target_properties(serial_tapas_mt
-    PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+  set_property(TARGET serial_tapas_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_tapas_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAGS}")
+  target_link_libraries(serial_tapas_mt ${MYTH_LIBRARIES})
 endif()
 
