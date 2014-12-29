@@ -4,11 +4,6 @@ set(EXAFMM_EXPANSION 4          CACHE STRING "Length of expansion")
 set(EXAFMM_FP64      True       CACHE BOOL   "Use double")
 set(EXAFMM_DEVICE    "CPU")
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -ggdb3 -Wall -O2")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -funroll-loops -fcolor-diagnostics")
-endif()
-
 if (EXAFMM_FP64)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFP64")
 endif()
