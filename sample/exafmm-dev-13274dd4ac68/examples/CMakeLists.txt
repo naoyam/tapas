@@ -55,7 +55,7 @@ if (EXAFMM_ENABLE_MT)
     )
 
   set_property(TARGET serial_simd_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
-  set_property(TARGET serial_simd_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAGS}")
+  set_property(TARGET serial_simd_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAG}")
   target_link_libraries(serial_simd_mt ${MYTH_LIBRARIES})
 endif()
 
@@ -87,7 +87,7 @@ if (EXAFMM_ENABLE_MT)
     )
 
   set_property(TARGET serial_tapas_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
-  set_property(TARGET serial_tapas_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAGS}")
+  set_property(TARGET serial_tapas_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAG}")
   target_link_libraries(serial_tapas_mt ${MYTH_LIBRARIES})
 endif()
 
