@@ -25,33 +25,39 @@ add_executable(serial
 set_target_properties(serial
   PROPERTIES COMPILE_FLAGS "-DTO_SERIAL")
 
+if (EXAFMM_ENABLE_MT AND NOT MYTH_FOUND)
+  message(FATAL_ERROR " You need MassiveThreads to build mutlithreaded binaries. Try using MYTH_ROOT or disable EXAFMM_ENABLE_MT")
+endif()
+
 #------------------------------------------------------------------
 # Original ExaFMM with multithreading (w/o SIMD)
 #------------------------------------------------------------------
-add_executable(serial_mt
-  serial.cxx
-  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
-  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
-  )
+if (EXAFMM_ENABLE_MT)
+  add_executable(serial_mt
+    serial.cxx
+    ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+    ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
+    )
 
-set_target_properties(serial_mt
-  PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD")
-set_target_properties(serial_mt
-  PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+  set_property(TARGET serial_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_mt PROPERTY COMPILE_FLAGS "-DMTHREAD")
+  target_link_libraries(serial_mt ${MYTH_LIBRARIES})
+endif()
 
 #------------------------------------------------------------------
 # Original ExaFMM with multithreading (w/ SIMD)
 #------------------------------------------------------------------
-add_executable(serial_simd_mt
-  serial.cxx
-  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
-  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
-  )
+if (EXAFMM_ENABLE_MT)
+  add_executable(serial_simd_mt
+    serial.cxx
+    ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+    ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
+    )
 
-set_target_properties(serial_simd_mt
-  PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD ${SIMD_FLAG}")
-set_target_properties(serial_simd_mt
-  PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+  set_property(TARGET serial_simd_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_simd_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAG}")
+  target_link_libraries(serial_simd_mt ${MYTH_LIBRARIES})
+endif()
 
 #------------------------------------------------------------------
 # Tapas implementation of ExaFMM w/o multithreading
@@ -67,17 +73,21 @@ add_executable(serial_tapas
 set_target_properties(serial_tapas
   PROPERTIES COMPILE_FLAGS "-DTO_SERIAL")
 
+#------------------------------------------------------------------
 # Tapas implementation of ExaFMM with multithreading
-add_executable(serial_tapas_mt
-  serial_tapas.cxx
-  ${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}_tapas.cxx
-  ${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}_tapas.cxx
-  ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
-  ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
-  )
+#------------------------------------------------------------------
+# Tapas implementation of ExaFMM with multithreading
+if (EXAFMM_ENABLE_MT)
+  add_executable(serial_tapas_mt
+    serial_tapas.cxx
+    ${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}_tapas.cxx
+    ${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}_tapas.cxx
+    ../kernels/${EXAFMM_EQUATION}${EXAFMM_BASIS}${EXAFMM_DEVICE}.cxx
+    ../kernels/${EXAFMM_EQUATION}P2P${EXAFMM_DEVICE}.cxx
+    )
 
-set_target_properties(serial_tapas_mt
-  PROPERTIES COMPILE_FLAGS "-I$ENV{HOME}/local/include -DMTHREAD")
-set_target_properties(serial_tapas_mt
-  PROPERTIES LINK_FLAGS "-lmyth-native -L$ENV{HOME}/local/lib")
+  set_property(TARGET serial_tapas_mt APPEND PROPERTY INCLUDE_DIRECTORIES ${MYTH_INCLUDE_DIRS})
+  set_property(TARGET serial_tapas_mt PROPERTY COMPILE_FLAGS "-DMTHREAD ${SIMD_FLAG}")
+  target_link_libraries(serial_tapas_mt ${MYTH_LIBRARIES})
+endif()
 
