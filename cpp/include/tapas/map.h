@@ -7,25 +7,43 @@
 
 namespace tapas {
 
-const int THRESHOLD = 1;
-
+/**
+ * @brief A threshold to stop recursive tiling parallelization
+ * Map for product uses checkerbord parallelism described in Taura et al.[1]
+ * to avoid write conflicts and explicit mutual exclusions.
+ * Split the product space until row or columns >= THRESHOLD.
+ *
+ * \todo Tune the value for each type (i.e. Body and Cells) or introduce auto-tuning
+ *
+ * [1] Taura et al. "A Task Parallelism Meets Fast Multipole Methods"
+ */
 template<class T>
-struct ClassCheck { static const bool value = false; };
+struct ThreadSpawnThreshold {
+    static const int Value = 1;
+};
 
-template<class CellType>
-struct ClassCheck<BodyIterator<CellType>> { static const bool value = true; };
-
-template<class T1_Iter, class T2_Iter>
+/**
+ * @brief Determines if two containers are 'mutually interactive'
+ * When calculating an interaction between two containers, sometimes we can save
+ * computation by 'mutual interaction'.
+ * This is the default implementation of a function to determine
+ * if we can apply mutual interaction between the two containers.
+ */
+template<class C1, class C2>
 struct AllowMutual {
-    static bool value(T1_Iter t1, T2_Iter t2) {
+    static bool value(C1 c1, C2 c2) {
+        // Generally, two elements of different types are not mutual interactive.
         return false;
     }
 };
 
-template<class T1_Iter>
-struct AllowMutual<T1_Iter, T1_Iter> {
-    static bool value(T1_Iter iter1, T1_Iter iter2) {
-        return iter1.AllowMutualInteraction(iter2);
+/** 
+ * @brief Specialization of AllowMutual for elements of a same container type
+ */
+template<class C1>
+struct AllowMutual<C1, C1> {
+    static bool value(C1 c1, C1 c2) {
+        return c1.AllowMutualInteraction(c2);
     }
 };
 
@@ -34,7 +52,8 @@ static void product_map(T1_Iter iter1, int beg1, int end1,
                         T2_Iter iter2, int beg2, int end2,
                         Funct f, Args... args) {
     assert(beg1 < end1 && beg2 < end2);
-    if (end1 - beg1 <= THRESHOLD || end2 - beg2 <= THRESHOLD) {
+    if (end1 - beg1 <= ThreadSpawnThreshold<T1_Iter>::Value ||
+        end2 - beg2 <= ThreadSpawnThreshold<T2_Iter>::Value) {
         for(int i = beg1; i < end1; i++) {
             for(int j = beg2; j < end2; j++) {
                 bool am = AllowMutual<T1_Iter, T2_Iter>::value(iter1, iter2);
