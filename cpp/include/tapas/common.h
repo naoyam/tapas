@@ -76,6 +76,17 @@ inline std::ostream& operator<<(std::ostream &os,
   return os << sj.get();
 }
 
-}
+/** @brief Holder of template parameter types (given by user code).
+ */
+template<int _DIM, class _FP, class _BT, class _BT_ATTR, class _ATTR=tapas::NONE>
+struct TapasStaticParams {
+    static const int Dim = _DIM; //!< dimension of simulation space
+    typedef _FP FP;              //!< Floating point types
+    typedef _BT BT;              //!< body info
+    typedef _BT_ATTR BT_ATTR;    //!< body attributes
+    typedef _ATTR ATTR;          //!< cell attributes
+};
+
+} // namespace tapas
 
 #endif /* TAPAS_COMMON_ */

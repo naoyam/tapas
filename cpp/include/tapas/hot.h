@@ -23,14 +23,6 @@
 #include "tapas/debug_util.h"
 #include "tapas/iterator.h"
 
-#define CELL_TEMPLATE_PARAMS                                            \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
-#define CELL_TEMPLATE_PARAMS_NO_DEF                             \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR
-#define CELL_TEMPLATE_ARGS                      \
-  DIM, FP, BT, BT_ATTR, ATTR
-#define CELL Cell<CELL_TEMPLATE_ARGS>
-
 #define DEPTH_BIT_WIDTH (3)
 #define MAX_DEPTH ((1 << DEPTH_BIT_WIDTH) - 1)
 
@@ -64,9 +56,9 @@ struct HelperNode {
   index_t np;
 };
 
-template <int DIM, class FP, class BT>
-HelperNode<DIM> *CreateInitialNodes(const typename BT::type *p, index_t np, 
-                                    const Region<DIM, FP> &r);
+template <class TSP>
+HelperNode<TSP::Dim> *CreateInitialNodes(const typename TSP::BT::type *p, index_t np, 
+                                         const Region<TSP> &r);
 
 KeyType MortonKeyAppendDepth(KeyType k, int depth);
 
@@ -128,30 +120,32 @@ index_t GetBodyNumber(const KeyType k, const HelperNode<DIM> *hn,
                       index_t offset, index_t len);
 
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>    
+template <class TSP>    
 class Partition;
 
-template <CELL_TEMPLATE_PARAMS>
-class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
-  friend class Partition<CELL_TEMPLATE_ARGS>;
-  friend class BodyIterator<Cell>;
- public:
-  typedef unordered_map<KeyType, Cell*> HashTable;
- protected:
-  KeyType key_;
-  HashTable *ht_;
- public:
+template <class TSP> // TapasStaticParams
+class Cell: public tapas::Cell<TSP> { 
+    friend class Partition<TSP>;
+    friend class BodyIterator<Cell>;
+  public:
+    typedef unordered_map<KeyType, Cell*> HashTable;
+  protected:
+    KeyType key_;
+    HashTable *ht_;
+  public:
 
-  Cell(const Region<DIM, FP> &region, index_t bid, index_t nb,
-       KeyType key, HashTable *ht,
-       typename BT::type *bodies, BT_ATTR *body_attrs):
-      tapas::Cell<CELL_TEMPLATE_ARGS>(region, bid, nb), key_(key),
-      ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
-      is_leaf_(true) {}
-
-  typedef ATTR attr_type;
-  typedef BT_ATTR body_attr_type;
-  KeyType key() const { return key_; }
+    Cell(const Region<TSP> &region,
+         index_t bid, index_t nb, KeyType key,
+         HashTable *ht,
+         typename TSP::BT::type *bodies,
+         typename TSP::BT_ATTR *body_attrs) :
+            tapas::Cell<TSP>(region, bid, nb), key_(key),
+            ht_(ht), bodies_(bodies), body_attrs_(body_attrs),
+            is_leaf_(true) {}
+    
+    typedef typename TSP::ATTR attr_type;
+    typedef typename TSP::BT_ATTR body_attr_type;
+    KeyType key() const { return key_; }
 
   bool operator==(const Cell &c) const;
   template <class T>
@@ -162,31 +156,31 @@ class Cell: public tapas::Cell<CELL_TEMPLATE_ARGS> {
   Cell &subcell(int idx) const;
   Cell &parent() const;
 #ifdef DEPRECATED
-  typename BT::type &particle(index_t idx) const {
-    return body(idx);
-  }
+    typename TSP::BT::type &particle(index_t idx) const {
+        return body(idx);
+    }
 #endif
-  typename BT::type &body(index_t idx) const;
-  BodyIterator<Cell> bodies() const;
+    typename TSP::BT::type &body(index_t idx) const;
+    BodyIterator<Cell> bodies() const;
 #ifdef DEPRECATED
-  BT_ATTR *particle_attrs() const {
-    return body_attrs();
-  }
+    typename TSP::BT_ATTR *particle_attrs() const {
+        return body_attrs();
+    }
 #endif
-  BT_ATTR *body_attrs() const;
-  SubCellIterator<Cell> subcells() const;
+    typename TSP::BT_ATTR *body_attrs() const;
+    SubCellIterator<Cell> subcells() const;
   
  protected:
-  BT_ATTR &body_attr(index_t idx) const;
-  HashTable *ht() { return ht_; }
-  Cell *Lookup(KeyType k) const;
-  typename BT::type *bodies_;
-  BT_ATTR *body_attrs_;
-  bool is_leaf_;
-  virtual void make_pure_virtual() const {}
+    typename TSP::BT_ATTR &body_attr(index_t idx) const;
+    HashTable *ht() { return ht_; }
+    Cell *Lookup(KeyType k) const;
+    typename TSP::BT::type *bodies_;
+    typename TSP::BT_ATTR *body_attrs_;
+    bool is_leaf_;
+    virtual void make_pure_virtual() const {}
 }; // class Cell
 
-template <CELL_TEMPLATE_PARAMS>    
+template <class TSP> // Tapas static params
 class Partition {
  private:
   const int max_nb_;
@@ -194,20 +188,19 @@ class Partition {
  public:
   Partition(unsigned max_nb): max_nb_(max_nb) {}
       
-  Cell<CELL_TEMPLATE_ARGS> *operator()(typename BT::type *b, index_t nb,
-                                       const Region<DIM, FP> &r);
+    Cell<TSP> *operator()(typename TSP::BT::type *b, index_t nb,
+                          const Region<TSP> &r);
  private:
-  void Refine(CELL *c, const hot::HelperNode<DIM> *hn,
-              const typename BT::type *b, int cur_depth,
-              KeyType cur_key) const;
-  
-}; // class PartitionHOT
+    void Refine(Cell<TSP> *c, const hot::HelperNode<TSP::Dim> *hn,
+                const typename TSP::BT::type *b, int cur_depth,
+                KeyType cur_key) const;
+}; // class Partition
 
 
 inline
 tapas::KeyType MortonKeyAppendDepth(tapas::KeyType k, int depth) {
-  k = (k << DEPTH_BIT_WIDTH) | depth;
-  return k;
+    k = (k << DEPTH_BIT_WIDTH) | depth;
+    return k;
 }
 
 inline
@@ -258,52 +251,56 @@ tapas::KeyType CalcFinestMortonKey(const tapas::Vec<DIM, int> &anchor) {
   return MortonKeyAppendDepth(k, MAX_DEPTH);
 }
 
-template <int DIM, class FP, class BT>
-HelperNode<DIM> *CreateInitialNodes(
-    const typename BT::type *p, index_t np,
-    const Region<DIM, FP> &r) {
-  HelperNode<DIM> *nodes = new HelperNode<DIM>[np];
-  FP num_cell = 1 << MAX_DEPTH;
-  Vec<DIM, FP> pitch;
-  for (int d = 0; d < DIM; ++d) {
-    pitch[d] = (r.max()[d] - r.min()[d]) / num_cell;
-  }
-  for (index_t i = 0; i < np; ++i) {
-    HelperNode<DIM> &node = nodes[i];
-    node.p_index = i;
-    node.np = 1;
-    Vec<DIM, FP> off = ParticlePosOffset<DIM, FP, BT::pos_offset>::vec((const void*)&(p[i]));
-    off -= r.min();
-    off /= pitch;
-    for (int d = 0; d < DIM; ++d) {
-      node.anchor[d] = (int)(off[d]);
-      // assume maximum boundary is inclusive, i.e., a particle can be
-      // right at the maximum boundary. anchor 
-      if (node.anchor[d] == (1 << MAX_DEPTH)) {
-        TAPAS_LOG_DEBUG() << "Particle located at max boundary." << std::endl;
-        node.anchor[d]--;
-      }
+template <class TSP>
+HelperNode<TSP::Dim> *CreateInitialNodes(const typename TSP::BT::type *p,
+                                    index_t np,
+                                    const Region<TSP> &r) {
+    const int Dim = TSP::Dim;
+    typedef typename TSP::FP FP;
+    typedef typename TSP::BT BT;
+    
+    HelperNode<Dim> *nodes = new HelperNode<TSP::Dim>[np];
+    FP num_cell = 1 << MAX_DEPTH;
+    Vec<Dim, FP> pitch;
+    for (int d = 0; d < Dim; ++d) {
+        pitch[d] = (r.max()[d] - r.min()[d]) / num_cell;
     }
+    for (index_t i = 0; i < np; ++i) {
+        HelperNode<Dim> &node = nodes[i];
+        node.p_index = i;
+        node.np = 1;
+        Vec<Dim, FP> off = ParticlePosOffset<Dim, FP, BT::pos_offset>::vec((const void*)&(p[i]));
+        off -= r.min();
+        off /= pitch;
+        for (int d = 0; d < Dim; ++d) {
+            node.anchor[d] = (int)(off[d]);
+            // assume maximum boundary is inclusive, i.e., a particle can be
+            // right at the maximum boundary. anchor 
+            if (node.anchor[d] == (1 << MAX_DEPTH)) {
+                TAPAS_LOG_DEBUG() << "Particle located at max boundary." << std::endl;
+                node.anchor[d]--;
+            }
+        }
 #ifdef TAPAS_DEBUG
-    assert(node.anchor >= 0);
+        assert(node.anchor >= 0);
 #if 1   
-    if (!(node.anchor < (1 << MAX_DEPTH))) {
-      TAPAS_LOG_ERROR() << "Anchor, " << node.anchor
-                        << ", exceeds the maximum depth." << std::endl
-                        << "Particle at "
-                        << ParticlePosOffset<DIM, FP, BT::pos_offset>::vec((const void*)&(p[i]))
-                        << std::endl;
-      TAPAS_DIE();
-    }
+        if (!(node.anchor < (1 << MAX_DEPTH))) {
+            TAPAS_LOG_ERROR() << "Anchor, " << node.anchor
+                              << ", exceeds the maximum depth." << std::endl
+                              << "Particle at "
+                              << ParticlePosOffset<Dim, FP, BT::pos_offset>::vec((const void*)&(p[i]))
+                              << std::endl;
+            TAPAS_DIE();
+        }
 #else
-    assert(node.anchor < (1 << MAX_DEPTH));
+        assert(node.anchor < (1 << MAX_DEPTH));
 #endif
 #endif // TAPAS_DEBUG
     
-    node.key = CalcFinestMortonKey<DIM>(node.anchor);
-  }
+        node.key = CalcFinestMortonKey<Dim>(node.anchor);
+    }
   
-  return nodes;
+    return nodes;
 }
 
 template <int DIM>
@@ -481,173 +478,180 @@ tapas::index_t GetBodyNumber(const tapas::KeyType k,
   return body_end - offset;
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-bool Cell<CELL_TEMPLATE_ARGS>::operator==(const Cell &c) const {
+template <class TSP>
+bool Cell<TSP>::operator==(const Cell &c) const {
   return key_ == c.key_;
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-bool Cell<CELL_TEMPLATE_ARGS>::IsRoot() const {
+template <class TSP>
+bool Cell<TSP>::IsRoot() const {
   return MortonKeyGetDepth(key_) == 0;
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-bool Cell<CELL_TEMPLATE_ARGS>::IsLeaf() const {
-  return is_leaf_;
+template <class TSP>
+bool Cell<TSP>::IsLeaf() const {
+    return is_leaf_;
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-int Cell<CELL_TEMPLATE_ARGS>::nsubcells() const {
-  if (IsLeaf()) return 0;
-  else return (1 << DIM);
+template <class TSP>
+int Cell<TSP>::nsubcells() const {
+    if (IsLeaf()) return 0;
+    else return (1 << TSP::Dim);
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::subcell(int idx) const {
-  KeyType k = MortonKeyChild<DIM>(key_, idx);
-  return *Lookup(k);
-}
-
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-Cell<CELL_TEMPLATE_ARGS> *Cell<CELL_TEMPLATE_ARGS>::Lookup(
-    KeyType k) const {
-  auto i = ht_->find(k);
-  if (i != ht_->end()) {
-    return i->second;
-  } else {
-    return NULL;
-  }
-}
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-Cell<CELL_TEMPLATE_ARGS> &Cell<CELL_TEMPLATE_ARGS>::parent() const {
-  if (IsRoot()) {
-    TAPAS_LOG_ERROR() << "Trying to access parent of the root cell." << std::endl;
-    TAPAS_DIE();
-  }
-  KeyType parent_key = MortonKeyParent<DIM>(key_);
-  auto *c = Lookup(parent_key);
-  if (c == NULL) {
-    TAPAS_LOG_ERROR() << "Parent (" << parent_key << ") of cell (" << key_ << ") not found."
-                      << std::endl;
-    TAPAS_DIE();
-  }
-  return *c;
-}
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-typename BT::type &Cell<CELL_TEMPLATE_ARGS>::body(index_t idx) const {
-  return bodies_[this->bid_+idx];
-}
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BT_ATTR *Cell<CELL_TEMPLATE_ARGS>::body_attrs() const {
-  return body_attrs_;
-}
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BT_ATTR &Cell<CELL_TEMPLATE_ARGS>::body_attr(index_t idx) const {
-  return body_attrs_[this->bid_+idx];
-}
-
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-SubCellIterator<Cell<CELL_TEMPLATE_ARGS>> Cell<CELL_TEMPLATE_ARGS>::
-subcells() const {
-  return SubCellIterator<Cell>(*this);
+template <class TSP>
+Cell<TSP> &Cell<TSP>::subcell(int idx) const {
+    KeyType k = MortonKeyChild<TSP::Dim>(key_, idx);
+    return *Lookup(k);
 }
 
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-BodyIterator<Cell<CELL_TEMPLATE_ARGS>> Cell<CELL_TEMPLATE_ARGS>::
-bodies() const {
-  return BodyIterator<Cell<CELL_TEMPLATE_ARGS> >(*this);
+template <class TSP>
+Cell<TSP> *Cell<TSP>::Lookup(KeyType k) const {
+    auto i = ht_->find(k);
+    if (i != ht_->end()) {
+        return i->second;
+    } else {
+        return NULL;
+    }
 }
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-Cell<CELL_TEMPLATE_ARGS> *Partition<CELL_TEMPLATE_ARGS>::operator()(
-    typename BT::type *b, index_t nb,
-    const Region<DIM, FP> &r) {
-  typedef Cell<CELL_TEMPLATE_ARGS> CELL_T;
-  
-  typename BT::type *b_work = new typename BT::type[nb];
-  HelperNode<DIM> *hn = CreateInitialNodes<DIM, FP, BT>(b, nb, r);
+template <class TSP>
+Cell<TSP> &Cell<TSP>::parent() const {
+    if (IsRoot()) {
+        TAPAS_LOG_ERROR() << "Trying to access parent of the root cell." << std::endl;
+        TAPAS_DIE();
+    }
+    KeyType parent_key = MortonKeyParent<TSP::Dim>(key_);
+    auto *c = Lookup(parent_key);
+    if (c == NULL) {
+        TAPAS_LOG_ERROR() << "Parent (" << parent_key << ") of "
+                          << "cell (" << key_ << ") not found."
+                          << std::endl;
+        TAPAS_DIE();
+    }
+    return *c;
+}
 
-  SortNodes<DIM>(hn, nb);
-  SortBodies<DIM, BT>(b, b_work, hn, nb);
-  std::memcpy(b, b_work, sizeof(typename BT::type) * nb);
-  //BT_ATTR *attrs = new BT_ATTR[nb];
-  BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
+template <class TSP>
+typename TSP::BT::type &Cell<TSP>::body(index_t idx) const {
+    return bodies_[this->bid_+idx];
+}
 
-  KeyType root_key = 0;
-  KeyPair kp = hot::GetBodyRange(root_key, hn, 0, nb);
-  TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", length: " << kp.second << "\n";
+template <class TSP>
+typename TSP::BT_ATTR *Cell<TSP>::body_attrs() const {
+    return body_attrs_;
+}
 
-  typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
-  auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
-  ht->insert(std::make_pair(root_key, root));
-  Refine(root, hn, b, 0, 0);
-  
-  return root;
+template <class TSP>
+typename TSP::BT_ATTR &Cell<TSP>::body_attr(index_t idx) const {
+    return body_attrs_[this->bid_+idx];
+}
+
+template <class TSP>
+SubCellIterator<Cell<TSP>> Cell<TSP>::subcells() const {
+    return SubCellIterator<Cell>(*this);
 }
 
 
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-void Partition<CELL_TEMPLATE_ARGS>::Refine(CELL *c,
-                                           const HelperNode<DIM> *hn,
-                                           const typename BT::type *b,
-                                           int cur_depth,
-                                           KeyType cur_key) const {
-  TAPAS_LOG_INFO() << "Current depth: " << cur_depth << std::endl;
-  if (c->nb() <= max_nb_) {
-    TAPAS_LOG_INFO() << "Small enough cell" << std::endl;
-    return;
-  }
-  if (cur_depth >= MAX_DEPTH) {
-    TAPAS_LOG_INFO() << "Reached maximum depth" << std::endl;
-    return;
-  }
-  KeyType child_key = MortonKeyFirstChild<DIM>(cur_key);
-  index_t cur_offset = c->bid();
-  index_t cur_len = c->nb();
-  for (int i = 0; i < (1 << DIM); ++i) {
-    TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
-    index_t child_bn = GetBodyNumber(child_key, hn, cur_offset, cur_len);
-    TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
-                      << child_bn << "\n";
-    auto child_r = c->region().PartitionBSP(i);
-    auto *child_cell = new Cell<CELL_TEMPLATE_ARGS>(
-        child_r, cur_offset, child_bn, child_key, c->ht(),
-        c->bodies_, c->body_attrs_);
-    c->ht()->insert(std::make_pair(child_key, child_cell));
-    TAPAS_LOG_DEBUG() << "Particles: \n";
+template <class TSP>
+BodyIterator<Cell<TSP>> Cell<TSP>::bodies() const {
+    return BodyIterator<Cell<TSP> >(*this);
+}
+
+template <class TSP> // Tapas Static Params
+Cell<TSP>*
+Partition<TSP>::operator() (typename TSP::BT::type *b,
+                             index_t nb,
+                             const Region<TSP> &r) {
+    const int Dim = TSP::Dim;
+    typedef typename TSP::FP FP;
+    typedef typename TSP::BT BT;
+    typedef typename TSP::BT_ATTR BT_ATTR;
+    typedef Cell<TSP> CELL_T;
+    
+    typename TSP::BT::type *b_work = new typename TSP::BT::type[nb];
+    HelperNode<Dim> *hn = CreateInitialNodes<TSP>(b, nb, r);
+
+    SortNodes<Dim>(hn, nb);
+    SortBodies<Dim, BT>(b, b_work, hn, nb);
+    std::memcpy(b, b_work, sizeof(typename BT::type) * nb);
+    //BT_ATTR *attrs = new BT_ATTR[nb];
+    BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
+
+    KeyType root_key = 0;
+    KeyPair kp = hot::GetBodyRange(root_key, hn, 0, nb);
+    TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", "
+                      << "length: " << kp.second << "\n";
+
+    typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
+    auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
+    ht->insert(std::make_pair(root_key, root));
+    Refine(root, hn, b, 0, 0);
+    
+    return root;
+}
+
+template <class TSP>
+void Partition<TSP>::Refine(Cell<TSP> *c,
+                            const HelperNode<TSP::Dim> *hn,
+                            const typename TSP::BT::type *b,
+                            int cur_depth,
+                            KeyType cur_key) const {
+    const int Dim = TSP::Dim;
+    typedef typename TSP::FP FP;
+    typedef typename TSP::BT BT;
+    
+    TAPAS_LOG_INFO() << "Current depth: " << cur_depth << std::endl;
+    if (c->nb() <= max_nb_) {
+        TAPAS_LOG_INFO() << "Small enough cell" << std::endl;
+        return;
+    }
+    if (cur_depth >= MAX_DEPTH) {
+        TAPAS_LOG_INFO() << "Reached maximum depth" << std::endl;
+        return;
+    }
+    KeyType child_key = MortonKeyFirstChild<Dim>(cur_key);
+    index_t cur_offset = c->bid();
+    index_t cur_len = c->nb();
+    for (int i = 0; i < (1 << Dim); ++i) {
+        TAPAS_LOG_DEBUG() << "Child key: " << child_key << std::endl; 
+        index_t child_bn = GetBodyNumber(child_key, hn, cur_offset, cur_len);
+        TAPAS_LOG_DEBUG() << "Range: offset: " << cur_offset << ", length: "
+                          << child_bn << "\n";
+        auto child_r = c->region().PartitionBSP(i);
+        auto *child_cell = new Cell<TSP>(
+            child_r, cur_offset, child_bn, child_key, c->ht(),
+            c->bodies_, c->body_attrs_);
+        c->ht()->insert(std::make_pair(child_key, child_cell));
+        TAPAS_LOG_DEBUG() << "Particles: \n";
 #ifdef TAPAS_DEBUG    
-    tapas::debug::PrintBodies<DIM, FP, BT>(b+cur_offset, child_bn, std::cerr);
+        tapas::debug::PrintBodies<Dim, FP, BT>(b+cur_offset, child_bn, std::cerr);
 #endif    
-    Refine(child_cell, hn, b, cur_depth+1, child_key);
-    child_key = hot::CalcMortonKeyNext<DIM>(child_key);
-    cur_offset = cur_offset + child_bn;
-    cur_len = cur_len - child_bn;
-  }
-  c->is_leaf_ = false;
+        Refine(child_cell, hn, b, cur_depth+1, child_key);
+        child_key = hot::CalcMortonKeyNext<Dim>(child_key);
+        cur_offset = cur_offset + child_bn;
+        cur_len = cur_len - child_bn;
+    }
+    c->is_leaf_ = false;
 }
 
 } // namespace hot
 
-template <CELL_TEMPLATE_PARAMS, class T2>
-ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>, T2>
-Product(hot::Cell<CELL_TEMPLATE_ARGS> &c, T2 t2) {
+template <class TSP, class T2>
+ProductIterator<CellIterator<hot::Cell<TSP>>, T2>
+Product(hot::Cell<TSP> &c, T2 t2) {
   TAPAS_LOG_DEBUG() << "Cell-X product\n";
-  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
+  typedef hot::Cell<TSP> CellType;
   typedef CellIterator<CellType> CellIterType;
   return ProductIterator<CellIterType, T2>(CellIterType(c), t2);
 }
 
-template <class T1, CELL_TEMPLATE_PARAMS>
-ProductIterator<T1, CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>>
-Product(T1 t1, hot::Cell<CELL_TEMPLATE_ARGS> &c) {
+template <class T1, class TSP>
+ProductIterator<T1, CellIterator<hot::Cell<TSP>>>
+Product(T1 t1, hot::Cell<TSP> &c) {
   TAPAS_LOG_DEBUG() << "X-Cell product\n";
-  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
+  typedef hot::Cell<TSP> CellType;
   typedef CellIterator<CellType> CellIterType;
   return ProductIterator<T1, CellIterType>(t1, CellIterType(c));
 }
@@ -662,24 +666,18 @@ Product(T1 t1, hot::Cell<CELL_TEMPLATE_ARGS> &c) {
  * \param c1 Root cell of the first tree
  * \param c2 Root cell of the second tree
  */ 
-template <CELL_TEMPLATE_PARAMS>
-ProductIterator<CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>,
-                CellIterator<hot::Cell<CELL_TEMPLATE_ARGS>>>
-Product(hot::Cell<CELL_TEMPLATE_ARGS> &c1,
-        hot::Cell<CELL_TEMPLATE_ARGS> &c2) {
-  TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
-  typedef hot::Cell<CELL_TEMPLATE_ARGS> CellType;
-  typedef CellIterator<CellType> CellIterType;
-  return ProductIterator<CellIterType, CellIterType>(
-      CellIterType(c1), CellIterType(c2));
+template <class TSP>
+ProductIterator<CellIterator<hot::Cell<TSP>>,
+                CellIterator<hot::Cell<TSP>>>
+        Product(hot::Cell<TSP> &c1,
+                hot::Cell<TSP> &c2) {
+    TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
+    typedef hot::Cell<TSP> CellType;
+    typedef CellIterator<CellType> CellIterType;
+    return ProductIterator<CellIterType, CellIterType>(
+        CellIterType(c1), CellIterType(c2));
 }
 
-
 } // namespace tapas
-
-#undef CELL_TEMPLATE_PARAMS
-#undef CELL_TEMPLATE_PARAMS_NO_DEF
-#undef CELL_TEMPLATE_ARGS
-#undef CELL
 
 #endif // TAPAS_HOT_

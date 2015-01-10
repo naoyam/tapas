@@ -13,17 +13,19 @@ FP REAL(const T &x) {
   return (FP)x;
 }   
 
-template <int DIM, class FP>
+template <class TSP> // Tapas Static Params (define in common.h)
 class Region {
+    static const int Dim = TSP::Dim;
+    typedef typename TSP::FP FP;
  private:
-  Vec<DIM, FP> min_;
-  Vec<DIM, FP> max_;
+  Vec<Dim, FP> min_;
+  Vec<Dim, FP> max_;
  public:
-  Region(const Vec<DIM, FP> &min, const Vec<DIM, FP> &max):
+  Region(const Vec<Dim, FP> &min, const Vec<Dim, FP> &max):
       min_(min), max_(max) {}
   Region() {}
 
-  Vec<DIM, FP> &min() {
+  Vec<Dim, FP> &min() {
     return min_;
   }
   FP min(int d) const {
@@ -32,7 +34,7 @@ class Region {
   FP &min(int d) {
     return min_[d];
   }
-  Vec<DIM, FP> &max() {
+  Vec<Dim, FP> &max() {
     return max_;
   }
   FP max(int d) const {
@@ -41,22 +43,22 @@ class Region {
   FP &max(int d) {
     return max_[d];
   }
-  const Vec<DIM, FP> &min() const {
+  const Vec<Dim, FP> &min() const {
     return min_;
   }
-  const Vec<DIM, FP> &max() const {
+  const Vec<Dim, FP> &max() const {
     return max_;
   }
   FP width(int d) const {
     return max_[d] - min_[d];
   }
-  const Vec<DIM, FP> width() const {
+  const Vec<Dim, FP> width() const {
     return max_ - min_;
   }
   
   Region PartitionBSP(int pos) const {
     Region sr = *this;
-    for (int i = 0; i < DIM; ++i) {
+    for (int i = 0; i < Dim; ++i) {
       FP center = sr.min(i) + sr.width(i) / 2;
       if ((pos & 1) == 0) {
         sr.max(i) = center;
@@ -68,9 +70,9 @@ class Region {
     return sr;
   }
 #if 0  
-  Region PartitionBSP(const Vec<DIM, int> &pos) const {
+  Region PartitionBSP(const Vec<Dim, int> &pos) const {
     int p = 0;
-    for (int i = 0; i < DIM; ++i) {
+    for (int i = 0; i < Dim; ++i) {
       p <<= 1;
       if (pos[i]) p |= 1;
     }
@@ -83,19 +85,19 @@ class Region {
   }
 };
 
-template <int DIM, class FP>
-std::ostream &operator<<(std::ostream &os, const Region<DIM, FP> &r) {
-  return r.Print(os);
+template <class TSP>
+std::ostream &operator<<(std::ostream &os, const Region<TSP> &r) {
+    return r.Print(os);
 }
 
-template <int DIM, class FP, int OFFSET>
+template <int Dim, class FP, int OFFSET>
 struct ParticlePosOffset {
   static FP *pos(const void *base, int dim) {
     return (FP *)(((intptr_t)base) + OFFSET + dim * sizeof(FP));
   }
-  static Vec<DIM, FP> vec(const void *base) {
+  static Vec<Dim, FP> vec(const void *base) {
     FP *p = (FP *)(((intptr_t)base) + OFFSET);
-    return Vec<DIM, FP>(p);
+    return Vec<Dim, FP>(p);
   }
 
 };

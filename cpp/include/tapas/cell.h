@@ -5,63 +5,47 @@
 #include "tapas/vec.h"
 #include "tapas/basic_types.h"
 
-#define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
-#define CELL_TEMPLATE_PARAMS_NO_DEF \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR
-#define CELL_TEMPLATE_ARGS \
-  DIM, FP, BT, BT_ATTR, ATTR
-
 namespace tapas {
 
 //template <int DIM, class BT, class BT_ATTR, class CellType>
-template <class CellType>
-class BodyIterator;
+template <class CellType> class BodyIterator;
+template <class CellType> class SubCellIterator;
 
-#if 0
-template <CELL_TEMPLATE_PARAMS_NO_DEF>
-class SubCellIterator;
-#elif 0
-template <int DIM, class CELL>
-class SubCellIterator;
-#else
-template <class CELL>
-class SubCellIterator;
-#endif
-
-template <CELL_TEMPLATE_PARAMS>
+template<class TSP> // TSP=TapasStaticParams
 class Cell {
- public:
-  static const int dim = DIM;
-  typedef BT BODY_INFO;
-  typedef BT_ATTR BODY_ATTR;
- protected:
+  public:
+    static const int Dim = TSP::Dim;
+    typedef typename TSP::FP FP;
+    typedef typename TSP::BT BT;
+    typedef typename TSP::BT_ATTR BT_ATTR;
+    typedef typename TSP::ATTR ATTR;
+  protected:
 #if 0  
-  BT_ATTR *dummy_;
-  BT::type *BT_dummy_;
+    BT_ATTR *dummy_;
+    BT::type *BT_dummy_;
 #endif  
-  ATTR attr_; // can be omitted when ATTR=NONE
-  Region<DIM, FP> region_;
-  index_t bid_;
-  index_t nb_;
- public:
-  Cell(const Region<DIM, FP> &region, index_t bid, index_t nb):
+    ATTR attr_; // can be omitted when ATTR=NONE
+    Region<TSP> region_;
+    index_t bid_;
+    index_t nb_;
+  public:
+  Cell(const Region<TSP> &region, index_t bid, index_t nb):
       region_(region), bid_(bid), nb_(nb) {}
   index_t bid() const { return bid_; }
   index_t nb() const { return nb_; }
-  const Region<DIM, FP> &region() const {
+  const Region<TSP> &region() const {
     return region_;
   }
   FP width(int d) const {
     return region_.width(d);
   }
-  Vec<DIM, FP> width() const {
+  Vec<Dim, FP> width() const {
     return region_.width();
   }
   FP center(int d) const {
     return region_.min(d) + width(d) / 2;
   }
-  Vec<DIM, FP> center() const {
+  Vec<Dim, FP> center() const {
     return region_.min() + width() / 2;
   }
   
@@ -117,9 +101,5 @@ class Cell {
 
 
 } // namespace tapas
-
-#undef CELL_TEMPLATE_PARAMS
-#undef CELL_TEMPLATE_PARAMS_NO_DEF
-#undef CELL_TEMPLATE_ARGS
 
 #endif /* TAPAS_CELL_H_ */
