@@ -568,14 +568,15 @@ Partition<TSP>::operator() (typename TSP::BT::type *b,
     typedef typename TSP::FP FP;
     typedef typename TSP::BT BT;
     typedef typename TSP::BT_ATTR BT_ATTR;
-    typedef Cell<TSP> CELL_T;
+    typedef typename BT::type Btype;
+    typedef Cell<TSP> CellT;
     
-    typename TSP::BT::type *b_work = new typename TSP::BT::type[nb];
+    Btype *b_work = new Btype[nb];
     HelperNode<Dim> *hn = CreateInitialNodes<TSP>(b, nb, r);
 
     SortNodes<Dim>(hn, nb);
     SortBodies<Dim, BT>(b, b_work, hn, nb);
-    std::memcpy(b, b_work, sizeof(typename BT::type) * nb);
+    std::memcpy(b, b_work, sizeof(Btype) * nb);
     //BT_ATTR *attrs = new BT_ATTR[nb];
     BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
 
@@ -584,8 +585,8 @@ Partition<TSP>::operator() (typename TSP::BT::type *b,
     TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", "
                       << "length: " << kp.second << "\n";
 
-    typename CELL_T::HashTable *ht = new typename CELL_T::HashTable();
-    auto *root = new CELL_T(r, 0, nb, root_key, ht, b, attrs);
+    auto *ht = new typename CellT::HashTable();
+    auto *root = new CellT(r, 0, nb, root_key, ht, b, attrs);
     ht->insert(std::make_pair(root_key, root));
     Refine(root, hn, b, 0, 0);
     
