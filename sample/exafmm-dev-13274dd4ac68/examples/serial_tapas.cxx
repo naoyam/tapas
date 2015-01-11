@@ -14,7 +14,7 @@
 #define TAPAS
 
 #ifdef TAPAS
-#include "tapas_common.h"
+#include "tapas_exafmm.h"
 #include "serial_tapas_helper.cxx"
 #endif
 

@@ -1,4 +1,4 @@
-#include "tapas_common.h"
+#include "tapas_exafmm.h"
 
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 #define IPOW2N(n) ((n >= 0) ? 1 : ODDEVEN(n))
