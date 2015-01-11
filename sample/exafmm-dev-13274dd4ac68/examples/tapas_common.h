@@ -4,11 +4,12 @@
 #include "types.h" // exafmm/include/types.h
 
 #include "tapas.h"
+#include "tapas/single_node_morton_hot.h" // Morton-key based single node partitioning
 
 struct CellAttr {
-  real_t R;
-  vecP M;
-  vecP L;
+    real_t R;
+    vecP M;
+    vecP L;
 };
 
 typedef tapas::BodyInfo<Body, 0> BodyInfo;
