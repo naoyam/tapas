@@ -35,15 +35,6 @@ typedef std::vector<KeyType> KeyVector;
 typedef std::unordered_set<KeyType> KeySet;
 typedef std::pair<KeyType, KeyType> KeyPair;
 
-template <class T>
-void PrintKeys(const T &s, std::ostream &os) {
-  tapas::StringJoin sj;
-  for (auto k: s) {
-    sj << k;
-  }
-  os << "Key set: " << sj << std::endl;
-}
-
 namespace single_node_morton_hot {
 
 using std::unordered_map;
