@@ -1,4 +1,3 @@
-#include "tapas_kernel.h"
 #include "tapas_common.h"
 
 const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
