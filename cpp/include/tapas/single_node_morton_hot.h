@@ -655,14 +655,7 @@ ProductIterator<T1, CellIterator<single_node_morton_hot::Cell<TSP>>>
 }
 
 /**
- * Constructs a ProductIterator for dual tree traversal of two trees
- * \tparam int DIM
- * \tparam class FP
- * \tparam class BT
- * \tparam class BT_ATTR
- * \tparam class ATTR=tapas::NONE
- * \param c1 Root cell of the first tree
- * \param c2 Root cell of the second tree
+ * @brief Constructs a ProductIterator for dual tree traversal of two trees
  */ 
 template <class TSP>
 ProductIterator<CellIterator<single_node_morton_hot::Cell<TSP>>,
@@ -686,14 +679,14 @@ template <int DIM, class FP, class BT,
           class PartitionAlgorithm>
 class Tapas;
 
-// Specialization of Tapas for HOT (single node Morton HOT) algorithm
+/**
+ * @brief Specialization of Tapas for HOT (single node Morton HOT) algorithm
+ */
 template <int DIM, class FP, class BT,
           class BT_ATTR, class CELL_ATTR>
 class Tapas<DIM, FP, BT, BT_ATTR, CELL_ATTR, SingleNodeMortonHOT> {
     typedef TapasStaticParams<DIM, FP, BT, BT_ATTR, CELL_ATTR> TSP; // Tapas static params
   public:
-    typedef tapas::Vec<2, FP> Vec2;
-    typedef tapas::Vec<3, FP> Vec3;
     typedef tapas::Region<TSP> Region;  
     typedef single_node_morton_hot::Cell<TSP> Cell;
     //typedef tapas::BodyIterator<DIM, BT, BT_ATTR, Cell> BodyIterator;
