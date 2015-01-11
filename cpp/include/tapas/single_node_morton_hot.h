@@ -44,28 +44,34 @@ void PrintKeys(const T &s, std::ostream &os) {
   os << "Key set: " << sj << std::endl;
 }
 
-namespace hot {
+namespace single_node_morton_hot {
 
 using std::unordered_map;
 
-template <int DIM>
-struct HelperNode {
-  KeyType key; // Morton key
-  Vec<DIM, int> anchor;
-  index_t p_index;
-  index_t np;
+/** @brief A partitioning plugin class that provides Morton-curve based octree partitioning.
+ */
+struct SingleNodeMortonHOT {
 };
 
+template <int DIM>
+struct HelperNode {
+    KeyType key; // Morton key
+    Vec<DIM, int> anchor;
+    index_t p_index;
+    index_t np;
+};
+    
 template <class TSP>
-HelperNode<TSP::Dim> *CreateInitialNodes(const typename TSP::BT::type *p, index_t np, 
-                                         const Region<TSP> &r);
+static HelperNode<TSP::Dim>*
+CreateInitialNodes(const typename TSP::BT::type *p, index_t np, 
+                   const Region<TSP> &r);
 
-KeyType MortonKeyAppendDepth(KeyType k, int depth);
+static KeyType MortonKeyAppendDepth(KeyType k, int depth);
 
-int MortonKeyGetDepth(KeyType k);
+static int MortonKeyGetDepth(KeyType k);
 
 KeyType MortonKeyRemoveDepth(KeyType k);
-
+    
 int MortonKeyIncrementDepth(KeyType k, int inc);
 
 template <int DIM>
@@ -147,14 +153,14 @@ class Cell: public tapas::Cell<TSP> {
     typedef typename TSP::BT_ATTR body_attr_type;
     KeyType key() const { return key_; }
 
-  bool operator==(const Cell &c) const;
-  template <class T>
-  bool operator==(const T &) const { return false; }
-  bool IsRoot() const;
-  bool IsLeaf() const;
-  int nsubcells() const;
-  Cell &subcell(int idx) const;
-  Cell &parent() const;
+    bool operator==(const Cell &c) const;
+    template <class T>
+    bool operator==(const T &) const { return false; }
+    bool IsRoot() const;
+    bool IsLeaf() const;
+    int nsubcells() const;
+    Cell &subcell(int idx) const;
+    Cell &parent() const;
 #ifdef DEPRECATED
     typename TSP::BT::type &particle(index_t idx) const {
         return body(idx);
@@ -170,7 +176,7 @@ class Cell: public tapas::Cell<TSP> {
     typename TSP::BT_ATTR *body_attrs() const;
     SubCellIterator<Cell> subcells() const;
   
- protected:
+  protected:
     typename TSP::BT_ATTR &body_attr(index_t idx) const;
     HashTable *ht() { return ht_; }
     Cell *Lookup(KeyType k) const;
@@ -182,16 +188,16 @@ class Cell: public tapas::Cell<TSP> {
 
 template <class TSP> // Tapas static params
 class Partition {
- private:
-  const int max_nb_;
+  private:
+    const int max_nb_;
   
- public:
-  Partition(unsigned max_nb): max_nb_(max_nb) {}
+  public:
+    Partition(unsigned max_nb): max_nb_(max_nb) {}
       
     Cell<TSP> *operator()(typename TSP::BT::type *b, index_t nb,
                           const Region<TSP> &r);
- private:
-    void Refine(Cell<TSP> *c, const hot::HelperNode<TSP::Dim> *hn,
+  private:
+    void Refine(Cell<TSP> *c, const single_node_morton_hot::HelperNode<TSP::Dim> *hn,
                 const typename TSP::BT::type *b, int cur_depth,
                 KeyType cur_key) const;
 }; // class Partition
@@ -205,56 +211,56 @@ tapas::KeyType MortonKeyAppendDepth(tapas::KeyType k, int depth) {
 
 inline
 int MortonKeyGetDepth(tapas::KeyType k) {
-  return k & ((1 << DEPTH_BIT_WIDTH) - 1);
+    return k & ((1 << DEPTH_BIT_WIDTH) - 1);
 }
 
 inline
 tapas::KeyType MortonKeyRemoveDepth(tapas::KeyType k) {
-  return k >> DEPTH_BIT_WIDTH;
+    return k >> DEPTH_BIT_WIDTH;
 }
 
 inline
 int MortonKeyIncrementDepth(tapas::KeyType k, int inc) {
-  int depth = MortonKeyGetDepth(k);
-  depth += inc;
+    int depth = MortonKeyGetDepth(k);
+    depth += inc;
 #ifdef TAPAS_DEBUG
-  if (depth > MAX_DEPTH) {
-    TAPAS_LOG_ERROR() << "Exceeded the maximum allowable depth: " << MAX_DEPTH << std::endl;
-    TAPAS_DIE();
-  }
+    if (depth > MAX_DEPTH) {
+        TAPAS_LOG_ERROR() << "Exceeded the maximum allowable depth: " << MAX_DEPTH << std::endl;
+        TAPAS_DIE();
+    }
 #endif  
-  k = MortonKeyRemoveDepth(k);
-  return MortonKeyAppendDepth(k, depth);
+    k = MortonKeyRemoveDepth(k);
+    return MortonKeyAppendDepth(k, depth);
 }
 
 template <int DIM>
 bool MortonKeyIsDescendant(tapas::KeyType asc, tapas::KeyType dsc) {
-  int depth = MortonKeyGetDepth(asc);
-  if (depth >= MortonKeyGetDepth(dsc)) return false;
-  int s = (MAX_DEPTH - depth) * DIM + DEPTH_BIT_WIDTH;
-  asc >>= s;
-  dsc >>= s;
-  return asc == dsc;
+    int depth = MortonKeyGetDepth(asc);
+    if (depth >= MortonKeyGetDepth(dsc)) return false;
+    int s = (MAX_DEPTH - depth) * DIM + DEPTH_BIT_WIDTH;
+    asc >>= s;
+    dsc >>= s;
+    return asc == dsc;
 }
 
 
 template <int DIM>
 tapas::KeyType CalcFinestMortonKey(const tapas::Vec<DIM, int> &anchor) {
-  KeyType k = 0;
-  int mask = 1 << (MAX_DEPTH - 1);
-  for (int i = 0; i < MAX_DEPTH; ++i) {
-    for (int d = DIM-1; d >= 0; --d) {
-      k = (k << 1) | ((anchor[d] & mask) >> (MAX_DEPTH - i - 1));
+    KeyType k = 0;
+    int mask = 1 << (MAX_DEPTH - 1);
+    for (int i = 0; i < MAX_DEPTH; ++i) {
+        for (int d = DIM-1; d >= 0; --d) {
+            k = (k << 1) | ((anchor[d] & mask) >> (MAX_DEPTH - i - 1));
+        }
+        mask >>= 1;
     }
-    mask >>= 1;
-  }
-  return MortonKeyAppendDepth(k, MAX_DEPTH);
+    return MortonKeyAppendDepth(k, MAX_DEPTH);
 }
 
 template <class TSP>
 HelperNode<TSP::Dim> *CreateInitialNodes(const typename TSP::BT::type *p,
-                                    index_t np,
-                                    const Region<TSP> &r) {
+                                         index_t np,
+                                         const Region<TSP> &r) {
     const int Dim = TSP::Dim;
     typedef typename TSP::FP FP;
     typedef typename TSP::BT BT;
@@ -305,51 +311,51 @@ HelperNode<TSP::Dim> *CreateInitialNodes(const typename TSP::BT::type *p,
 
 template <int DIM>
 void SortNodes(HelperNode<DIM> *nodes, index_t n) {
-  std::qsort(nodes, n, sizeof(HelperNode<DIM>),
-             [] (const void *x, const void *y) {
-               return static_cast<const HelperNode<DIM>*>(x)->key -
-                   static_cast<const HelperNode<DIM>*>(y)->key;
-             });
+    std::qsort(nodes, n, sizeof(HelperNode<DIM>),
+               [] (const void *x, const void *y) {
+                   return static_cast<const HelperNode<DIM>*>(x)->key -
+                           static_cast<const HelperNode<DIM>*>(y)->key;
+               });
 }
 
 template <int DIM, class BT>
 void SortBodies(const typename BT::type *b, typename BT::type *sorted,
                 const HelperNode<DIM> *sorted_nodes,
                 tapas::index_t nb) {
-  for (index_t i = 0; i < nb; ++i) {
-    sorted[i] = b[sorted_nodes[i].p_index];
-  }
+    for (index_t i = 0; i < nb; ++i) {
+        sorted[i] = b[sorted_nodes[i].p_index];
+    }
 }
 
 template <int DIM>
 tapas::KeyType FindFinestAncestor(tapas::KeyType x,
                                   tapas::KeyType y) {
-  int min_depth = std::min(MortonKeyGetDepth(x),
-                           MortonKeyGetDepth(y));
-  x = MortonKeyRemoveDepth(x);
-  y = MortonKeyRemoveDepth(y);
-  KeyType a = ~(x ^ y);
-  int common_depth = 0;
-  for (; common_depth < min_depth; ++common_depth) {
-    KeyType t = (a >> (MAX_DEPTH - common_depth -1) * DIM) & ((1 << DIM) - 1);
-    if (t != ((1 << DIM) -1)) break;
-  }
-  int common_bit_len = common_depth * DIM;
-  KeyType mask = ((1 << common_bit_len) - 1) << (MAX_DEPTH * DIM - common_bit_len);
-  return MortonKeyAppendDepth(x & mask, common_depth);
+    int min_depth = std::min(MortonKeyGetDepth(x),
+                             MortonKeyGetDepth(y));
+    x = MortonKeyRemoveDepth(x);
+    y = MortonKeyRemoveDepth(y);
+    KeyType a = ~(x ^ y);
+    int common_depth = 0;
+    for (; common_depth < min_depth; ++common_depth) {
+        KeyType t = (a >> (MAX_DEPTH - common_depth -1) * DIM) & ((1 << DIM) - 1);
+        if (t != ((1 << DIM) -1)) break;
+    }
+    int common_bit_len = common_depth * DIM;
+    KeyType mask = ((1 << common_bit_len) - 1) << (MAX_DEPTH * DIM - common_bit_len);
+    return MortonKeyAppendDepth(x & mask, common_depth);
 }
 
 template <int DIM, class T>
 void AppendChildren(tapas::KeyType x, T &s) {
-  int x_depth = MortonKeyGetDepth(x);
-  int c_depth = x_depth + 1;
-  if (c_depth > MAX_DEPTH) return;
-  x = MortonKeyIncrementDepth(x, 1);
-  for (int i = 0; i < (1 << DIM); ++i) {
-    int child_key = (i << ((MAX_DEPTH - c_depth) * DIM + DEPTH_BIT_WIDTH));
-    s.push_back(x | child_key);
-    TAPAS_LOG_DEBUG() << "Adding child " << (x | child_key) << std::endl;
-  }
+    int x_depth = MortonKeyGetDepth(x);
+    int c_depth = x_depth + 1;
+    if (c_depth > MAX_DEPTH) return;
+    x = MortonKeyIncrementDepth(x, 1);
+    for (int i = 0; i < (1 << DIM); ++i) {
+        int child_key = (i << ((MAX_DEPTH - c_depth) * DIM + DEPTH_BIT_WIDTH));
+        s.push_back(x | child_key);
+        TAPAS_LOG_DEBUG() << "Adding child " << (x | child_key) << std::endl;
+    }
 }
 
 // Note this doesn't return a valid morton key when the incremented
@@ -357,67 +363,67 @@ void AppendChildren(tapas::KeyType x, T &s) {
 // FindBodyRange method.
 template <int DIM>
 tapas::KeyType CalcMortonKeyNext(KeyType k) {
-  int d = MortonKeyGetDepth(k);
-  KeyType inc = 1 << (DIM * (MAX_DEPTH - d) + DEPTH_BIT_WIDTH);
-  return k + inc;
+    int d = MortonKeyGetDepth(k);
+    KeyType inc = 1 << (DIM * (MAX_DEPTH - d) + DEPTH_BIT_WIDTH);
+    return k + inc;
 }
 
 template <int DIM>
 tapas::KeyType MortonKeyClearDescendants(KeyType k) {
-  int d = MortonKeyGetDepth(k);
-  KeyType m = ~(((1 << ((MAX_DEPTH - d) * DIM)) - 1) << DEPTH_BIT_WIDTH);
-  return k & m;
+    int d = MortonKeyGetDepth(k);
+    KeyType m = ~(((1 << ((MAX_DEPTH - d) * DIM)) - 1) << DEPTH_BIT_WIDTH);
+    return k & m;
 }
 
 template <int DIM>
 tapas::KeyType MortonKeyParent(KeyType k) {
-  int d = MortonKeyGetDepth(k);  
-  if (d == 0) return k;
-  k = MortonKeyIncrementDepth(k, -1);
-  return MortonKeyClearDescendants<DIM>(k);
+    int d = MortonKeyGetDepth(k);  
+    if (d == 0) return k;
+    k = MortonKeyIncrementDepth(k, -1);
+    return MortonKeyClearDescendants<DIM>(k);
 }
 
 
 template <int DIM>
 tapas::KeyType MortonKeyFirstChild(KeyType k) {
 #ifdef TAPAS_DEBUG
-  KeyType t = MortonKeyRemoveDepth(k);
-  t = t & ~(~((KeyType)0) << (DIM * (MAX_DEPTH - MortonKeyGetDepth(k))));
-  assert(t == 0);
+    KeyType t = MortonKeyRemoveDepth(k);
+    t = t & ~(~((KeyType)0) << (DIM * (MAX_DEPTH - MortonKeyGetDepth(k))));
+    assert(t == 0);
 #endif  
-  return MortonKeyIncrementDepth(k, 1);
+    return MortonKeyIncrementDepth(k, 1);
 }
 
 template <int DIM>
 tapas::KeyType MortonKeyChild(KeyType k, int child_idx) {
-  TAPAS_ASSERT(child_idx < (1 << DIM));
-  k = MortonKeyIncrementDepth(k, 1);
-  int d = MortonKeyGetDepth(k);
-  return k | (child_idx << ((MAX_DEPTH - d) * DIM + DEPTH_BIT_WIDTH));
+    TAPAS_ASSERT(child_idx < (1 << DIM));
+    k = MortonKeyIncrementDepth(k, 1);
+    int d = MortonKeyGetDepth(k);
+    return k | (child_idx << ((MAX_DEPTH - d) * DIM + DEPTH_BIT_WIDTH));
 }
 
 template <int DIM>
 void CompleteRegion(tapas::KeyType x, tapas::KeyType y,
                     tapas::KeyVector &s) {
-  KeyType fa = FindFinestAncestor<DIM>(x, y);
-  KeyList w;
-  AppendChildren<DIM>(fa, w);
-  tapas::PrintKeys(w, std::cout);
-  while (w.size() > 0) {
-    KeyType k = w.front();
-    w.pop_front();
-    TAPAS_LOG_DEBUG() << "visiting " << k << std::endl;
-    if ((k > x && k < y) && !MortonKeyIsDescendant<DIM>(k, y)) {
-      s.push_back(k);
-      TAPAS_LOG_DEBUG() << "Adding " << k << " to output set" << std::endl;
-    } else if (MortonKeyIsDescendant<DIM>(k, x) ||
-               MortonKeyIsDescendant<DIM>(k, y)) {
-      TAPAS_LOG_DEBUG() << "Adding children of " << k << " to work set" << std::endl;
-      AppendChildren<DIM>(k, w);
+    KeyType fa = FindFinestAncestor<DIM>(x, y);
+    KeyList w;
+    AppendChildren<DIM>(fa, w);
+    tapas::PrintKeys(w, std::cout);
+    while (w.size() > 0) {
+        KeyType k = w.front();
+        w.pop_front();
+        TAPAS_LOG_DEBUG() << "visiting " << k << std::endl;
+        if ((k > x && k < y) && !MortonKeyIsDescendant<DIM>(k, y)) {
+            s.push_back(k);
+            TAPAS_LOG_DEBUG() << "Adding " << k << " to output set" << std::endl;
+        } else if (MortonKeyIsDescendant<DIM>(k, x) ||
+                   MortonKeyIsDescendant<DIM>(k, y)) {
+            TAPAS_LOG_DEBUG() << "Adding children of " << k << " to work set" << std::endl;
+            AppendChildren<DIM>(k, w);
 
+        }
     }
-  }
-  std::sort(std::begin(s), std::end(s));
+    std::sort(std::begin(s), std::end(s));
 }
 
 template <int DIM>
@@ -425,28 +431,28 @@ tapas::index_t FindFirst(const KeyType k,
                          const HelperNode<DIM> *hn,
                          const index_t offset,
                          const index_t len) {
-  // Assume hn is softed by key
-  // Searches the first element that is grether or equal to the key.
-  // Returns len if not found, i.e., all elements are less than the
-  // key.
-  TAPAS_ASSERT(len > 0);
-  index_t pivot = len / 2;
-  index_t i = offset + pivot;
-  index_t cur;
-  if (hn[i].key < k) {
-    cur = offset + len;
-    index_t rem_len = len - pivot - 1;
-    if (rem_len > 0) {
-      cur = std::min(cur, FindFirst(k, hn, i + 1, rem_len));
+    // Assume hn is softed by key
+    // Searches the first element that is grether or equal to the key.
+    // Returns len if not found, i.e., all elements are less than the
+    // key.
+    TAPAS_ASSERT(len > 0);
+    index_t pivot = len / 2;
+    index_t i = offset + pivot;
+    index_t cur;
+    if (hn[i].key < k) {
+        cur = offset + len;
+        index_t rem_len = len - pivot - 1;
+        if (rem_len > 0) {
+            cur = std::min(cur, FindFirst(k, hn, i + 1, rem_len));
+        }
+    } else { // (hn[i].key >= k) {
+        cur = i;
+        index_t rem_len = pivot;
+        if (rem_len > 0) {
+            cur = std::min(cur, FindFirst(k, hn, offset, rem_len));
+        }
     }
-  } else { // (hn[i].key >= k) {
-    cur = i;
-    index_t rem_len = pivot;
-    if (rem_len > 0) {
-      cur = std::min(cur, FindFirst(k, hn, offset, rem_len));
-    }
-  }
-  return cur;
+    return cur;
 }
 
 // Returns the range of bodies that are included in the cell specified
@@ -456,13 +462,13 @@ tapas::KeyPair GetBodyRange(const tapas::KeyType k,
                             const HelperNode<DIM> *hn,
                             index_t offset,
                             index_t len) {
-  TAPAS_ASSERT(len > 0);
-  index_t body_begin = FindFirst(k, hn, offset, len);
-  TAPAS_ASSERT(body_begin >= offset);
-  TAPAS_ASSERT(body_begin < len);
-  index_t body_num = GetBodyNumber(k, hn, body_begin,
-                                   len-(body_begin-offset));
-  return std::make_pair(body_begin, body_num);
+    TAPAS_ASSERT(len > 0);
+    index_t body_begin = FindFirst(k, hn, offset, len);
+    TAPAS_ASSERT(body_begin >= offset);
+    TAPAS_ASSERT(body_begin < len);
+    index_t body_num = GetBodyNumber(k, hn, body_begin,
+                                     len-(body_begin-offset));
+    return std::make_pair(body_begin, body_num);
 }
 
 template <int DIM>
@@ -470,22 +476,22 @@ tapas::index_t GetBodyNumber(const tapas::KeyType k,
                              const HelperNode<DIM> *hn,
                              index_t offset,
                              index_t len) {
-  //index_t body_begin = FindFirst(k, hn, offset, len);
-  if (len == 0) return 0;
-  if (len == 1) return 1;
-  KeyType next_key = CalcMortonKeyNext<DIM>(k);
-  index_t body_end = FindFirst(next_key, hn, offset+1, len-1);
-  return body_end - offset;
+    //index_t body_begin = FindFirst(k, hn, offset, len);
+    if (len == 0) return 0;
+    if (len == 1) return 1;
+    KeyType next_key = CalcMortonKeyNext<DIM>(k);
+    index_t body_end = FindFirst(next_key, hn, offset+1, len-1);
+    return body_end - offset;
 }
 
 template <class TSP>
 bool Cell<TSP>::operator==(const Cell &c) const {
-  return key_ == c.key_;
+    return key_ == c.key_;
 }
 
 template <class TSP>
 bool Cell<TSP>::IsRoot() const {
-  return MortonKeyGetDepth(key_) == 0;
+    return MortonKeyGetDepth(key_) == 0;
 }
 
 template <class TSP>
@@ -562,8 +568,8 @@ BodyIterator<Cell<TSP>> Cell<TSP>::bodies() const {
 template <class TSP> // Tapas Static Params
 Cell<TSP>*
 Partition<TSP>::operator() (typename TSP::BT::type *b,
-                             index_t nb,
-                             const Region<TSP> &r) {
+                            index_t nb,
+                            const Region<TSP> &r) {
     const int Dim = TSP::Dim;
     typedef typename TSP::FP FP;
     typedef typename TSP::BT BT;
@@ -581,7 +587,7 @@ Partition<TSP>::operator() (typename TSP::BT::type *b,
     BT_ATTR *attrs = (BT_ATTR*)calloc(nb, sizeof(BT_ATTR));
 
     KeyType root_key = 0;
-    KeyPair kp = hot::GetBodyRange(root_key, hn, 0, nb);
+    KeyPair kp = single_node_morton_hot::GetBodyRange(root_key, hn, 0, nb);
     TAPAS_LOG_DEBUG() << "Root range: offset: " << kp.first << ", "
                       << "length: " << kp.second << "\n";
 
@@ -630,31 +636,31 @@ void Partition<TSP>::Refine(Cell<TSP> *c,
         tapas::debug::PrintBodies<Dim, FP, BT>(b+cur_offset, child_bn, std::cerr);
 #endif    
         Refine(child_cell, hn, b, cur_depth+1, child_key);
-        child_key = hot::CalcMortonKeyNext<Dim>(child_key);
+        child_key = single_node_morton_hot::CalcMortonKeyNext<Dim>(child_key);
         cur_offset = cur_offset + child_bn;
         cur_len = cur_len - child_bn;
     }
     c->is_leaf_ = false;
 }
 
-} // namespace hot
+} // namespace single_node_morton_hot
 
 template <class TSP, class T2>
-ProductIterator<CellIterator<hot::Cell<TSP>>, T2>
-Product(hot::Cell<TSP> &c, T2 t2) {
-  TAPAS_LOG_DEBUG() << "Cell-X product\n";
-  typedef hot::Cell<TSP> CellType;
-  typedef CellIterator<CellType> CellIterType;
-  return ProductIterator<CellIterType, T2>(CellIterType(c), t2);
+ProductIterator<CellIterator<single_node_morton_hot::Cell<TSP>>, T2>
+Product(single_node_morton_hot::Cell<TSP> &c, T2 t2) {
+    TAPAS_LOG_DEBUG() << "Cell-X product\n";
+    typedef single_node_morton_hot::Cell<TSP> CellType;
+    typedef CellIterator<CellType> CellIterType;
+    return ProductIterator<CellIterType, T2>(CellIterType(c), t2);
 }
 
 template <class T1, class TSP>
-ProductIterator<T1, CellIterator<hot::Cell<TSP>>>
-Product(T1 t1, hot::Cell<TSP> &c) {
-  TAPAS_LOG_DEBUG() << "X-Cell product\n";
-  typedef hot::Cell<TSP> CellType;
-  typedef CellIterator<CellType> CellIterType;
-  return ProductIterator<T1, CellIterType>(t1, CellIterType(c));
+ProductIterator<T1, CellIterator<single_node_morton_hot::Cell<TSP>>>
+                         Product(T1 t1, single_node_morton_hot::Cell<TSP> &c) {
+    TAPAS_LOG_DEBUG() << "X-Cell product\n";
+    typedef single_node_morton_hot::Cell<TSP> CellType;
+    typedef CellIterator<CellType> CellIterType;
+    return ProductIterator<T1, CellIterType>(t1, CellIterType(c));
 }
 
 /**
@@ -668,18 +674,21 @@ Product(T1 t1, hot::Cell<TSP> &c) {
  * \param c2 Root cell of the second tree
  */ 
 template <class TSP>
-ProductIterator<CellIterator<hot::Cell<TSP>>,
-                CellIterator<hot::Cell<TSP>>>
-        Product(hot::Cell<TSP> &c1,
-                hot::Cell<TSP> &c2) {
+ProductIterator<CellIterator<single_node_morton_hot::Cell<TSP>>,
+                CellIterator<single_node_morton_hot::Cell<TSP>>>
+                         Product(single_node_morton_hot::Cell<TSP> &c1,
+                                 single_node_morton_hot::Cell<TSP> &c2) {
     TAPAS_LOG_DEBUG() << "Cell-Cell product\n";
-    typedef hot::Cell<TSP> CellType;
+    typedef single_node_morton_hot::Cell<TSP> CellType;
     typedef CellIterator<CellType> CellIterType;
     return ProductIterator<CellIterType, CellIterType>(
         CellIterType(c1), CellIterType(c2));
 }
 
-class SingleNodeMortonHOT { };
+/** 
+ * @brief A dummy class to achieve template specialization.
+ */
+struct SingleNodeMortonHOT {};
 
 template <int DIM, class FP, class BT,
           class BT_ATTR, class CELL_ATTR,
@@ -695,18 +704,16 @@ class Tapas<DIM, FP, BT, BT_ATTR, CELL_ATTR, SingleNodeMortonHOT> {
     typedef tapas::Vec<2, FP> Vec2;
     typedef tapas::Vec<3, FP> Vec3;
     typedef tapas::Region<TSP> Region;  
-    typedef tapas::hot::Cell<TSP> Cell;
+    typedef single_node_morton_hot::Cell<TSP> Cell;
     //typedef tapas::BodyIterator<DIM, BT, BT_ATTR, Cell> BodyIterator;
     typedef tapas::BodyIterator<Cell> BodyIterator;  
     static Cell *Partition(typename BT::type *b,
                            index_t nb, const Region &r,
                            int max_nb) {
-        tapas::hot::Partition<TSP> part(max_nb);
+        single_node_morton_hot::Partition<TSP> part(max_nb);
         return part(b, nb, r);
     }
 };
-
-
 
 } // namespace tapas
 

@@ -1,6 +1,7 @@
 #ifndef TAPAS_ITERATOR_H_
 #define TAPAS_ITERATOR_H_
 
+#include "tapas/logging.h"
 #include "tapas/cell.h"
 
 namespace tapas {

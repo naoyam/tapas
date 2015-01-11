@@ -3,9 +3,6 @@
 
 #include "tapas/common.h"
 
-//!\todo this code should be written in user's code
-#include "single_node_morton_hot.h"
-
 namespace tapas {
 
 template <class BT, int POS_OFFSET>
@@ -19,7 +16,11 @@ class BodyInfo {
 template <int DIM, class FP, class BT,
           class BT_ATTR, class CELL_ATTR,
           class PartitionAlgorithm>
-class Tapas {};
+class Tapas {
+    // Generic definition of Tapas class.
+    // This is just a placeholder and actual definition is provided by
+    // partitioning algorithm plugins using template specialization.
+};
 
 } // namespace tapas
 
