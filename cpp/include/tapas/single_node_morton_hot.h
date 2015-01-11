@@ -518,7 +518,7 @@ Cell<TSP> *Cell<TSP>::Lookup(KeyType k) const {
     if (i != ht_->end()) {
         return i->second;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -530,7 +530,7 @@ Cell<TSP> &Cell<TSP>::parent() const {
     }
     KeyType parent_key = MortonKeyParent<TSP::Dim>(key_);
     auto *c = Lookup(parent_key);
-    if (c == NULL) {
+    if (c == nullptr) {
         TAPAS_LOG_ERROR() << "Parent (" << parent_key << ") of "
                           << "cell (" << key_ << ") not found."
                           << std::endl;
