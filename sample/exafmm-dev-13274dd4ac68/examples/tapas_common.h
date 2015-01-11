@@ -12,7 +12,7 @@ struct CellAttr {
 };
 
 typedef tapas::BodyInfo<Body, 0> BodyInfo;
-typedef tapas::Tapas<3, real_t, BodyInfo, kvec4, CellAttr, tapas::HOT> Tapas;
+typedef tapas::Tapas<3, real_t, BodyInfo, kvec4, CellAttr, tapas::SingleNodeMortonHOT> Tapas;
 typedef Tapas::Region Region;
 
 #endif // EXAFMM_TAPAS_COMMON_H_
