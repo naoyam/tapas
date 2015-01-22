@@ -71,11 +71,38 @@ class StringJoin {
   }
 };
 
+/**
+ * @brief Print a tapas::StringJoin object to a stream os
+ */
 inline std::ostream& operator<<(std::ostream &os,
                                 const StringJoin &sj) {
   return os << sj.get();
 }
 
+/**
+ * @brief Print keys of a container T to a stream os
+ */
+template <class T>
+void PrintKeys(const T &s, std::ostream &os) {
+    tapas::StringJoin sj;
+    for (auto k: s) {
+        sj << k;
+    }
+    os << "Key set: " << sj << std::endl;
 }
+
+/** 
+ * @brief Holder of template parameter types (given by user code).
+ */
+template<int _DIM, class _FP, class _BT, class _BT_ATTR, class _ATTR=tapas::NONE>
+struct TapasStaticParams {
+    static const int Dim = _DIM; //!< dimension of simulation space
+    typedef _FP FP;              //!< Floating point types
+    typedef _BT BT;              //!< body info
+    typedef _BT_ATTR BT_ATTR;    //!< body attributes
+    typedef _ATTR ATTR;          //!< cell attributes
+};
+
+} // namespace tapas
 
 #endif /* TAPAS_COMMON_ */

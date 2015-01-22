@@ -1,14 +1,8 @@
 #ifndef TAPAS_ITERATOR_H_
 #define TAPAS_ITERATOR_H_
 
+#include "tapas/logging.h"
 #include "tapas/cell.h"
-
-#define CELL_TEMPLATE_PARAMS \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR=tapas::NONE
-#define CELL_TEMPLATE_PARAMS_NO_DEF \
-  int DIM, class FP, class BT, class BT_ATTR, class ATTR
-#define CELL_TEMPLATE_ARGS \
-  DIM, FP, BT, BT_ATTR, ATTR
 
 namespace tapas {
 
@@ -41,13 +35,13 @@ class BodyIterator {
     tmp += n;
     return tmp;
   }
-  typename CellType::BODY_INFO::type *operator->() const {
+  typename CellType::BT::type *operator->() const {
     return &(c_.body(idx_));
   }
   void rewind(int idx) {
     idx_ = idx;
   }
-  typename CellType::BODY_ATTR &attr() const {
+  typename CellType::BT_ATTR &attr() const {
     return c_.body_attr(idx_);
   }
 #if 0  
@@ -58,10 +52,10 @@ class BodyIterator {
   const CellType &cell() const {
     return c_;
   }
-  typename CellType::BODY_INFO::type &operator++() {
+  typename CellType::BT::type &operator++() {
     return c_.body(++idx_);
   }
-  typename CellType::BODY_INFO::type &operator++(int) {
+  typename CellType::BT::type &operator++(int) {
     return c_.body(idx_++);
   }
   bool operator==(const BodyIterator &x) const {
@@ -124,15 +118,15 @@ class CellIterator {
   }
 }; // class CellIterator
 
-template <class CELL>
+template <class CellType>
 class SubCellIterator {
-  const CELL &c_;
+  const CellType &c_;
   int idx_;
  public:
-  typedef CELL value_type;
-  typedef typename CELL::attr_type attr_type;
+  typedef CellType value_type;
+  typedef typename CellType::attr_type attr_type;
   
- SubCellIterator(const CELL &c): c_(c), idx_(0) {}
+ SubCellIterator(const CellType &c): c_(c), idx_(0) {}
  SubCellIterator(const SubCellIterator& rhs) : c_(rhs.c_),idx_(rhs.idx_) {}
   SubCellIterator& operator=(const SubCellIterator& rhs) {
     this->c_ = rhs.c_;
@@ -144,7 +138,7 @@ class SubCellIterator {
     if (c_.IsLeaf()) {
       return 0;
     } else {
-      return 1 << CELL::dim;
+      return 1 << CellType::Dim;
     }
   }
   value_type &operator*() const {
@@ -159,7 +153,7 @@ class SubCellIterator {
   void rewind(int idx) {
     idx_ = idx;
   }
-  SubCellIterator<CELL>& operator+=(int ofst) {
+  SubCellIterator<CellType>& operator+=(int ofst) {
     idx_ += ofst;
     return *this;
   }
@@ -317,9 +311,5 @@ ProductIterator<BodyIterator<CELL>> Product(
 
 
 } // namespace tapas
-
-#undef CELL_TEMPLATE_PARAMS
-#undef CELL_TEMPLATE_PARAMS_NO_DEF
-#undef CELL_TEMPLATE_ARGS
 
 #endif // TAPAS_ITERATOR_H_ 
